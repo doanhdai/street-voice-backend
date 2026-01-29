@@ -3,7 +3,7 @@ spring:
     name: StreetVoice
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/street_voice_db
+    url: jdbc:postgresql://localhost:5434/street_voice_db
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
@@ -33,4 +33,7 @@ logging:
   level:
     com.foodstreet.voice: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+vietmap:
+  api-key: ${VIETMAP_API_KEY_SERVICES}
+  base-url: https://maps.vietmap.vn/api

@@ -1,0 +1,79 @@
+{
+	"info": {
+		"_postman_id": "b3e3e7a1-5f2a-4b6c-8d1e-9f0a2b3c4d5e",
+		"name": "Street Voice - VietMap Sync",
+		"description": "Collection to test VietMap Sync API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Sync Stalls (Admin)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"lat\": 10.7607739,\n    \"lng\": 106.7006542,\n    \"keyword\": \"ốc\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/admin/sync-vietmap",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"admin",
+						"sync-vietmap"
+					]
+				},
+				"description": "Syncs food stalls from VietMap based on location and keyword."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Nearby Stalls",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/stalls/sync?lat=10.7607739&lng=106.7006542&radius=1000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"stalls",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "lat",
+							"value": "10.7607739"
+						},
+						{
+							"key": "lng",
+							"value": "106.7006542"
+						},
+						{
+							"key": "radius",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
