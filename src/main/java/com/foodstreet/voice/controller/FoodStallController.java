@@ -4,16 +4,20 @@ import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
 import com.foodstreet.voice.dto.NearbyRequest;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
+import com.foodstreet.voice.entity.FoodStall;
+import com.foodstreet.voice.repository.FoodStallRepository;
+import com.foodstreet.voice.service.AudioService;
 import com.foodstreet.voice.service.FoodStallService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/stalls")
@@ -77,4 +81,59 @@ public class FoodStallController {
         log.info("Deleted food stall with id: {}", id);
         return ResponseEntity.noContent().build();
     }
+
+    @Autowired
+    private AudioService audioService;
+
+    @Autowired
+    private FoodStallRepository foodStallRepository;
+
+    // API Sync cho Mobile (Offline)
+    @GetMapping("/sync")
+    public ResponseEntity<List<FoodStallResponse>> syncDataForMobile(
+            @RequestParam(defaultValue = "10.762622") double lat, // Toa do Q4
+            @RequestParam(defaultValue = "106.700174") double lng,
+            @RequestParam(defaultValue = "2000") double radius) { // R=2km
+
+        // Lay tat ca cac quan Q4 voi R=2km
+        List<FoodStall> stalls = foodStallRepository.findStallsWithinRadius(lat, lng, radius);
+
+        //Mapping
+        List<FoodStallResponse> response = stalls.stream().map(stall -> {
+            FoodStallResponse res = convertToResponse(stall);
+
+            // Lazy gen
+            if (res.getAudioUrl() == null || res.getAudioUrl().isEmpty()) {
+                String audioUrl = audioService.getOrCreateAudio(
+                        "Xin chao day la " + stall.getName() + ". " + stall.getDescription(),
+                        "vi"
+                );
+                res.setAudioUrl(audioUrl);
+            }
+            return res;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    private FoodStallResponse convertToResponse(FoodStall stall) {
+        FoodStallResponse response = new FoodStallResponse();
+
+        response.setId(stall.getId());
+        response.setName(stall.getName());
+        response.setDescription(stall.getDescription());
+
+        // Map path
+        response.setAudioUrl(stall.getAudioUrl());
+        response.setImageUrl(stall.getImageUrl());
+
+        // QUAN TRỌNG: Chuyển đổi tọa độ từ PostGIS (Point) sang Lat/Lng
+        // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry Object
+        if (stall.getLocation() != null) {
+            response.setLatitude(stall.getLocation().getY());  // Y là Vĩ độ (Lat)
+            response.setLongitude(stall.getLocation().getX()); // X là Kinh độ (Lng)
+        }
+        return response;
+    }
+
 }

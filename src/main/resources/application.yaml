@@ -2,18 +2,17 @@ spring:
   application:
     name: StreetVoice
   
-    datasource:
+  datasource:
     url: jdbc:postgresql://localhost:5432/street_voice_db
     username: postgres
-    password: 
+    password: password
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10 
       minimum-idle: 5
       connection-timeout: 30000
   
-    jpa:
-    database-platform: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
+  jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
