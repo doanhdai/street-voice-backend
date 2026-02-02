@@ -3,9 +3,9 @@ spring:
     name: StreetVoice
   
   datasource:
-    url: jdbc:postgresql://localhost:5434/street_voice_db
+    url: jdbc:postgresql://localhost:5432/street_voice_db
     username: postgres
-    password: password
+    password: 
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10 
