@@ -7,15 +7,14 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class FoodStallResponse {
-
     private Long id;
     private String name;
     private String description;
-    private String audioUrl;
-    private String imageUrl;
     private Double latitude;
     private Double longitude;
+    private String audioUrl;
+    private String imageUrl;
 }
