@@ -11,12 +11,6 @@ The Sync Module allows administrators to fetch restaurant data from **VietMap AP
 
 ## 2. Setup & Installation
 
-### A. Environment Variables
-Create a `.env` file in the project root (if not exists) and add your keys:
-```properties
-VIETMAP_API_KEY_TILES=d55785f692bc3425968b647d18d7e7000132b36932bf7741
-VIETMAP_API_KEY_SERVICES=7e8a843c9fae9a778a7f59ae4f5b8fa351a677301422804e
-```
 *Note: The application automatically loads this file at startup.*
 
 ### B. Database
@@ -64,32 +58,52 @@ A Postman collection is available for easy import:
 *   File: `vietmap_sync_postman_collection.json`
 *   **Usage**: Open Postman -> Import -> Select this file -> Run requests.
 
-## 5. Troubleshooting Log (Recent Issues)
+## 5. Geofence Tuning (New Feature)
 
-During development, we encountered and fixed the following critical issues. Reference this if you face similar problems.
+We have added the ability to fine-tune the geofence (Anchor Point & Radius) for each store.
+
+### A. Admin Tuning API
+Allows Admin to shift the "Anchor Point" (to the street side) and adjust the radius without changing the store's metadata.
+*   **Method**: `PATCH`
+*   **URL**: `/api/v1/admin/stores/{id}/geofence`
+*   **Body** (JSON):
+    ```json
+    {
+        "latitude": 10.762900,
+        "longitude": 106.700300,
+        "triggerRadius": 10.0
+    }
+    ```
+*   **Note**: Fields are optional. You can update only `triggerRadius` if desired.
+
+### B. Mobile Sync API Update
+The `GET /api/v1/stalls/sync` endpoint now returns:
+*   `latitude` / `longitude`: Extracted directly from the updated PostGIS geometry.
+*   `triggerRadius`: The specific radius for that store (default 8.0m).
+
+## 6. Troubleshooting Log (Recent Issues)
+
+Reference this if you face similar problems during development.
 
 ### Issue 1: Database Port Conflict (Bind for 0.0.0.0:5432 failed)
 **Symptom:** Docker container fails to start; Application fails to connect.
 **Cause:** Port 5432 was occupied by another process/container.
 **Fix:** Changed host port mapping to **5434** in Docker and updated `url` in `application.yaml`.
 
-### Issue 2: `java-dotenv` Dependency Failure
-**Symptom:** Maven build fails to resolve `io.github.cdimascio:java-dotenv`.
-**Cause:** Network or artifact repository issues.
-**Fix:** Removed the dependency. Implemented a **manual `.env` parser** in `StreetVoiceApplication.java` to load variables into System Properties at startup.
+### Issue 2: Hibernate Syntax Error (`:` near `::geography`)
+**Symptom:** API fails with `PSQLException: ERROR: syntax error at or near ":"`.
+**Cause:** Hibernate JPQL parser confuses the PostgreSQL cast operator `::` with a named parameter `:param`.
+**Fix:** Replaced shorthand `::geography` with standard SQL `CAST(... AS geography)`.
+*   **File**: `FoodStallRepository.java`
 
 ### Issue 3: Missing `RestClient` Bean (`NoSuchBeanDefinitionException`)
 **Symptom:** Application fails to start, saying `RestClient.Builder` required a bean.
 **Cause:** `pom.xml` had `spring-boot-starter-webmvc` (invalid) instead of `spring-boot-starter-web` and was using Spring Boot `4.x`.
 **Fix:**
 1.  Changed artifact to `spring-boot-starter-web`.
-2.  Downgraded Spring Boot to **3.2.2** (stable) to ensure correct auto-configuration.
+2.  Downgraded Spring Boot to **3.2.2** (stable).
 
-### Issue 4: Lombok Compilation Error (Version null)
-**Symptom:** `Resolution of annotationProcessorPath dependencies failed: version can neither be null...`
-**Cause:** `maven-compiler-plugin` configuration for Lombok was missing the `<version>` tag.
-**Fix:** Added `<version>${lombok.version}</version>` to the plugin configuration in `pom.xml`.
-
-### Issue 5: Unit Test `NoClassDefFoundError`
-**Symptom:** Tests fail on `DefaultPrettyPrinter`.
-**Fix:** Added `jackson-databind` dependency to `pom.xml`.
+### Issue 4: Controller Path Conflict (404/500 on PATCH)
+**Symptom:** Calling `PATCH /api/v1/admin/stores/...` returned 404 or 500.
+**Cause:** `FoodStallController` had `@RequestMapping("/api/v1/stalls")`, so the method inside it was actually mapped to `/api/v1/stalls/admin/stores/...`.
+**Fix:** Moved the `updateGeofence` method to `AdminSyncController` which is mapped to `/api/v1/admin`.
