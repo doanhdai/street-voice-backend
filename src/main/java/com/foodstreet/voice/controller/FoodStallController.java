@@ -30,7 +30,7 @@ public class FoodStallController {
 
     @GetMapping
     public ResponseEntity<List<FoodStallResponse>> getAllStalls() {
-        log.info("Received request to get all food stalls");
+        log.info("Da nhan request de lay tat ca cac quan an");
         List<FoodStallResponse> stalls = foodStallService.getAllStalls();
         log.info("Returning {} food stalls", stalls.size());
         return ResponseEntity.ok(stalls);
@@ -38,29 +38,29 @@ public class FoodStallController {
 
     @GetMapping("/{id}")
     public ResponseEntity<FoodStallResponse> getStallById(@PathVariable Long id) {
-        log.info("Received request to get food stall with id: {}", id);
+        log.info("Da nhan request de lay quan an co id: {}", id);
         FoodStallResponse stall = foodStallService.getStallById(id);
         return ResponseEntity.ok(stall);
     }
 
     @GetMapping("/nearby")
     public ResponseEntity<FoodStallResponse> findNearestStall(@Valid @ModelAttribute NearbyRequest request) {
-        log.info("Received request to find nearest stall: lat={}, lon={}", request.getLat(), request.getLon());
+        log.info("Da nhan request de tim quan an gan nhat: lat={}, lon={}", request.getLat(), request.getLon());
 
         FoodStallResponse response = foodStallService.findNearestStall(
                 request.getLat(),
                 request.getLon());
 
-        log.info("Returning nearest stall: {}", response.getName());
+        log.info("Da tra ve quan an gan nhat: {}", response.getName());
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<FoodStallResponse> createStall(@Valid @RequestBody CreateFoodStallRequest request) {
-        log.info("Received request to create food stall: {}", request.getName());
+        log.info("Da nhan request de tao quan an moi: {}", request.getName());
         FoodStallResponse stall = foodStallService.createStall(request);
-        log.info("Created food stall with id: {}", stall.getId());
+        log.info("Da tao quan an moi: {}", stall.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(stall);
     }
 
@@ -68,17 +68,17 @@ public class FoodStallController {
     public ResponseEntity<FoodStallResponse> updateStall(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFoodStallRequest request) {
-        log.info("Received request to update food stall with id: {}", id);
+        log.info("Da nhan request de cap nhat quan an co id: {}", id);
         FoodStallResponse stall = foodStallService.updateStall(id, request);
-        log.info("Updated food stall: {}", stall.getName());
+        log.info("Cap nhat quan an: {}", stall.getName());
         return ResponseEntity.ok(stall);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStall(@PathVariable Long id) {
-        log.info("Received request to delete food stall with id: {}", id);
+        log.info("Da nhan request de xoa quan an co id: {}", id);
         foodStallService.deleteStall(id);
-        log.info("Deleted food stall with id: {}", id);
+        log.info("Xoa quan an co id: {}", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -98,7 +98,7 @@ public class FoodStallController {
         // Lay tat ca cac quan Q4 voi R=2km
         List<FoodStall> stalls = foodStallRepository.findStallsWithinRadius(lat, lng, radius);
 
-        //Mapping
+        // Mapping
         List<FoodStallResponse> response = stalls.stream().map(stall -> {
             FoodStallResponse res = convertToResponse(stall);
 
@@ -106,8 +106,7 @@ public class FoodStallController {
             if (res.getAudioUrl() == null || res.getAudioUrl().isEmpty()) {
                 String audioUrl = audioService.getOrCreateAudio(
                         "Xin chao day la " + stall.getName() + ". " + stall.getDescription(),
-                        "vi"
-                );
+                        "vi");
                 res.setAudioUrl(audioUrl);
             }
             return res;
@@ -121,16 +120,19 @@ public class FoodStallController {
 
         response.setId(stall.getId());
         response.setName(stall.getName());
+        response.setAddress(stall.getAddress());
         response.setDescription(stall.getDescription());
 
         // Map path
         response.setAudioUrl(stall.getAudioUrl());
         response.setImageUrl(stall.getImageUrl());
+        response.setTriggerRadius(stall.getTriggerRadius());
 
         // QUAN TRỌNG: Chuyển đổi tọa độ từ PostGIS (Point) sang Lat/Lng
-        // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry Object
+        // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry
+        // Object
         if (stall.getLocation() != null) {
-            response.setLatitude(stall.getLocation().getY());  // Y là Vĩ độ (Lat)
+            response.setLatitude(stall.getLocation().getY()); // Y là Vĩ độ (Lat)
             response.setLongitude(stall.getLocation().getX()); // X là Kinh độ (Lng)
         }
         return response;
