@@ -7,16 +7,10 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class FoodStallResponse {
-    private Long id;
-    private String name;
-    private String address;
-    private String description;
+@AllArgsConstructor
+public class GeofenceUpdateRequest {
     private Double latitude;
     private Double longitude;
     private Integer triggerRadius;
-    private String audioUrl;
-    private String imageUrl;
 }

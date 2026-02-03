@@ -62,7 +62,7 @@ public class FoodStallService {
     public FoodStallResponse createStall(CreateFoodStallRequest request) {
         log.debug("Creating new food stall: {}", request.getName());
 
-                Point location = geometryFactory.createPoint(
+        Point location = geometryFactory.createPoint(
                 new Coordinate(request.getLongitude(), request.getLatitude()));
 
         FoodStall stall = FoodStall.builder()
@@ -87,7 +87,7 @@ public class FoodStallService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Food stall not found with id: " + id));
 
-                if (request.getName() != null) {
+        if (request.getName() != null) {
             stall.setName(request.getName());
         }
         if (request.getDescription() != null) {
@@ -112,6 +112,64 @@ public class FoodStallService {
     }
 
     @Transactional
+    public FoodStallResponse updateGeofence(Long id, com.foodstreet.voice.dto.GeofenceUpdateRequest request) {
+        log.debug("Updating geofence for food stall with id: {}", id);
+
+        FoodStall stall = foodStallRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Food stall not found with id: " + id));
+
+        // Cap nhat vi tri (Anchor Point)
+        if (request.getLatitude() != null && request.getLongitude() != null) {
+            Point location = geometryFactory.createPoint(
+                    new Coordinate(request.getLongitude(), request.getLatitude()));
+            stall.setLocation(location);
+            log.debug("Updated location for stall {}: {}, {}", id, request.getLatitude(), request.getLongitude());
+        }
+
+        // Cap nhat radius
+        if (request.getTriggerRadius() != null) {
+            stall.setTriggerRadius(request.getTriggerRadius());
+            log.debug("Updated trigger radius for stall {}: {}", id, request.getTriggerRadius());
+        }
+
+        FoodStall updatedStall = foodStallRepository.save(stall);
+        return mapToResponse(updatedStall);
+    }
+
+    @Transactional
+    public int importStalls(List<com.foodstreet.voice.dto.FoodStallImportDto> requests) {
+        log.debug("Importing {} curated food stalls", requests.size());
+        int count = 0;
+        for (com.foodstreet.voice.dto.FoodStallImportDto req : requests) {
+            // Kiem tra trung lap theo name
+            // Neu co trung lap thi bo qua
+            if (foodStallRepository.existsByName(req.getName())) {
+                log.debug("Skipping existing stall: {}", req.getName());
+                continue;
+            }
+
+            Point location = geometryFactory.createPoint(
+                    new Coordinate(req.getLng(), req.getLat()));
+
+            FoodStall stall = FoodStall.builder()
+                    .name(req.getName())
+                    .address(req.getAddress())
+                    .description(req.getDescription())
+                    .location(location)
+                    .triggerRadius(req.getTriggerRadius() != null ? req.getTriggerRadius() : 15)
+                    .audioUrl(req.getAudioUrl())
+                    .imageUrl(null)
+                    .build();
+
+            foodStallRepository.save(stall);
+            count++;
+        }
+        log.info("Successfully imported {} new stalls", count);
+        return count;
+    }
+
+    @Transactional
     public void deleteStall(Long id) {
         log.debug("Deleting food stall with id: {}", id);
 
@@ -127,9 +185,13 @@ public class FoodStallService {
         return FoodStallResponse.builder()
                 .id(stall.getId())
                 .name(stall.getName())
+                .address(stall.getAddress())
                 .description(stall.getDescription())
                 .audioUrl(stall.getAudioUrl())
                 .imageUrl(stall.getImageUrl())
-                .latitude(stall.getLocation().getY())                 .longitude(stall.getLocation().getX())                 .build();
+                .triggerRadius(stall.getTriggerRadius())
+                .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
+                .longitude(stall.getLocation() != null ? stall.getLocation().getX() : null)
+                .build();
     }
 }

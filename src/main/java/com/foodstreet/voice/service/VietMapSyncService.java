@@ -109,7 +109,8 @@ public class VietMapSyncService {
                             .description(description)
                             .location(location)
                             .audioUrl(audioUrl)
-                            .imageUrl("") // Placeholder
+                            .imageUrl("")
+                            .triggerRadius(8)
                             .build();
 
                     foodStallRepository.save(stall);
