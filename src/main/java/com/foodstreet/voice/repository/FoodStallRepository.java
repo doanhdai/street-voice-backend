@@ -21,21 +21,21 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long> {
             @Param("longitude") double longitude,
             @Param("radiusInMeters") double radiusInMeters);
 
-    // ST_Distance: Tính toán khoảng cách chính xác cho từng dòng trong DB, sau đó
-    // sort.
-    // Độ phức tạp cao (O(N\log N)), không tận dụng tốt Index
-    // van giữ lại nếu cần check khoảng cách chính xác 1 điểm
-    @Query(value = """
-            SELECT * FROM food_stalls
-            ORDER BY ST_Distance(
-                location,
-                ST_GeogFromText('POINT(' || :longitude || ' ' || :latitude || ')')
-            )
-            LIMIT 1
-            """, nativeQuery = true)
-    Optional<FoodStall> findNearestStall(
-            @Param("latitude") double latitude,
-            @Param("longitude") double longitude);
+        // ST_Distance: Tính toán khoảng cách chính xác cho từng dòng trong DB, sau đó
+        // sort.
+        // Độ phức tạp cao (O(N\log N)), không tận dụng tốt Index
+        // van giữ lại nếu cần check khoảng cách chính xác 1 điểm
+        @Query(value = """
+                        SELECT * FROM food_stalls
+                        ORDER BY ST_Distance(
+                            location,
+                            ST_GeogFromText('POINT(' || :longitude || ' ' || :latitude || ')')
+                        )
+                        LIMIT 1
+                        """, nativeQuery = true)
+        Optional<FoodStall> findNearestStall(
+                        @Param("latitude") double latitude,
+                        @Param("longitude") double longitude);
 
     boolean existsByName(String name);
 
