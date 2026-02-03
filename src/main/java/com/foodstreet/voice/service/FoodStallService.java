@@ -28,9 +28,9 @@ public class FoodStallService {
 
     @Transactional(readOnly = true)
     public List<FoodStallResponse> getAllStalls() {
-        log.debug("Fetching all food stalls");
+        log.debug("Lay danh sach tat ca quan an");
         List<FoodStall> stalls = foodStallRepository.findAll();
-        log.debug("Found {} food stalls", stalls.size());
+        log.debug("Da lay duoc {} quan an", stalls.size());
         return stalls.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -38,29 +38,29 @@ public class FoodStallService {
 
     @Transactional(readOnly = true)
     public FoodStallResponse getStallById(Long id) {
-        log.debug("Fetching food stall with id: {}", id);
+        log.debug("Tim kiem quan an theo id: {}", id);
         FoodStall stall = foodStallRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Food stall not found with id: " + id));
+                        "Quan an khong ton tai: " + id));
         return mapToResponse(stall);
     }
 
     @Transactional(readOnly = true)
     public FoodStallResponse findNearestStall(double latitude, double longitude) {
-        log.debug("Finding nearest stall to coordinates: lat={}, lon={}", latitude, longitude);
+        log.debug("Tim kiem quan an gan nhat tai toa do: lat={}, lon={}", latitude, longitude);
 
         FoodStall stall = foodStallRepository.findNearestStall(latitude, longitude)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No food stall found near the given location"));
+                        "Khong tim thay quan an gan nhat"));
 
-        log.debug("Found nearest stall: {}", stall.getName());
+        log.debug("Tim thay quan an gan nhat: {}", stall.getName());
 
         return mapToResponse(stall);
     }
 
     @Transactional
     public FoodStallResponse createStall(CreateFoodStallRequest request) {
-        log.debug("Creating new food stall: {}", request.getName());
+        log.debug("Tao quan an moi: {}", request.getName());
 
         Point location = geometryFactory.createPoint(
                 new Coordinate(request.getLongitude(), request.getLatitude()));
@@ -74,18 +74,18 @@ public class FoodStallService {
                 .build();
 
         FoodStall savedStall = foodStallRepository.save(stall);
-        log.debug("Created food stall with id: {}", savedStall.getId());
+        log.debug("Da tao quan an moi: {}", savedStall.getId());
 
         return mapToResponse(savedStall);
     }
 
     @Transactional
     public FoodStallResponse updateStall(Long id, UpdateFoodStallRequest request) {
-        log.debug("Updating food stall with id: {}", id);
+        log.debug("Cap nhat quan an co id: {}", id);
 
         FoodStall stall = foodStallRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Food stall not found with id: " + id));
+                        "Quan an khong ton tai: " + id));
 
         if (request.getName() != null) {
             stall.setName(request.getName());
@@ -117,20 +117,20 @@ public class FoodStallService {
 
         FoodStall stall = foodStallRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Food stall not found with id: " + id));
+                        "Quan an khong ton tai: " + id));
 
         // Cap nhat vi tri (Anchor Point)
         if (request.getLatitude() != null && request.getLongitude() != null) {
             Point location = geometryFactory.createPoint(
                     new Coordinate(request.getLongitude(), request.getLatitude()));
             stall.setLocation(location);
-            log.debug("Updated location for stall {}: {}, {}", id, request.getLatitude(), request.getLongitude());
+            log.debug("Cap nhat vi tri cho quan an {}: {}, {}", id, request.getLatitude(), request.getLongitude());
         }
 
         // Cap nhat radius
         if (request.getTriggerRadius() != null) {
             stall.setTriggerRadius(request.getTriggerRadius());
-            log.debug("Updated trigger radius for stall {}: {}", id, request.getTriggerRadius());
+            log.debug("Cap nhat radius cho quan an {}: {}", id, request.getTriggerRadius());
         }
 
         FoodStall updatedStall = foodStallRepository.save(stall);
@@ -139,13 +139,13 @@ public class FoodStallService {
 
     @Transactional
     public int importStalls(List<com.foodstreet.voice.dto.FoodStallImportDto> requests) {
-        log.debug("Importing {} curated food stalls", requests.size());
+        log.debug("Importing {} quan an", requests.size());
         int count = 0;
         for (com.foodstreet.voice.dto.FoodStallImportDto req : requests) {
             // Kiem tra trung lap theo name
             // Neu co trung lap thi bo qua
             if (foodStallRepository.existsByName(req.getName())) {
-                log.debug("Skipping existing stall: {}", req.getName());
+                log.debug("Quan an da ton tai: {}", req.getName());
                 continue;
             }
 
@@ -165,20 +165,20 @@ public class FoodStallService {
             foodStallRepository.save(stall);
             count++;
         }
-        log.info("Successfully imported {} new stalls", count);
+        log.info("Da import {} quan an moi", count);
         return count;
     }
 
     @Transactional
     public void deleteStall(Long id) {
-        log.debug("Deleting food stall with id: {}", id);
+        log.debug("Xoa quan an co id: {}", id);
 
         if (!foodStallRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Food stall not found with id: " + id);
+            throw new ResourceNotFoundException("Quan an khong ton tai: " + id);
         }
 
         foodStallRepository.deleteById(id);
-        log.debug("Deleted food stall with id: {}", id);
+        log.debug("Xoa thanh cong quan an co id: {}", id);
     }
 
     private FoodStallResponse mapToResponse(FoodStall stall) {

@@ -18,6 +18,17 @@ import java.util.Map;
 public class AdminSyncController {
 
     private final VietMapSyncService vietMapSyncService;
+    private final com.foodstreet.voice.service.FoodStallService foodStallService;
+
+    @org.springframework.web.bind.annotation.PatchMapping("/stores/{id}/geofence")
+    public ResponseEntity<com.foodstreet.voice.dto.FoodStallResponse> updateGeofence(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @RequestBody com.foodstreet.voice.dto.GeofenceUpdateRequest request) {
+        log.info("Received request to update geofence for stall id: {}", id);
+        com.foodstreet.voice.dto.FoodStallResponse stall = foodStallService.updateGeofence(id, request);
+        log.info("Updated geofence for stall: {}", stall.getName());
+        return ResponseEntity.ok(stall);
+    }
 
     @PostMapping("/sync-vietmap")
     public ResponseEntity<?> syncVietMapData(@RequestBody Map<String, Object> payload) {
