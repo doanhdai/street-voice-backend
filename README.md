@@ -68,7 +68,21 @@ spring:
     password: your_password
 ```
 
-## 🏃 Chạy ứng dụng
+## 🐳 Docker Setup (Full Stack)
+
+Để chạy trọn bộ (Backend + Database) cho Frontend Dev:
+
+### 1. Cấu hình
+Đảm bảo file `.env` đã có API Key (như mục Cài đặt).
+
+### 2. Chạy
+```bash
+docker-compose up --build
+```
+*   Backend: `http://localhost:8080`
+*   Database: `localhost:5432` (User: `postgres`, Pass: `password`, DB: `street_voice_db`)
+
+## 🏃 Chạy ứng dụng (Thủ công)
 
 ### Development mode
 
@@ -117,6 +131,34 @@ curl "http://localhost:8080/api/v1/stalls/nearby?lat=21.0285&lon=105.8542"
 - `400 Bad Request`: Tham số không hợp lệ
 - `404 Not Found`: Không tìm thấy quán ăn nào gần vị trí
 - `500 Internal Server Error`: Lỗi server
+
+### Import Dữ Liệu (JSON)
+
+**Endpoint:** `POST /api/v1/admin/import-json`
+
+**Body:** Danh sách các quán ăn.
+
+**Ví dụ JSON:**
+```json
+[
+  {
+    "name": "Quán Ốc Oanh",
+    "address": "534 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+    "lat": 10.7607739,
+    "lng": 106.7006542,
+    "description": "Quán ốc nổi tiếng...",
+    "audioUrl": "https://example.com/audio/oc_oanh.mp3",
+    "triggerRadius": 15
+  }
+]
+```
+
+**Curl Command:**
+```bash
+curl -X POST -H "Content-Type: application/json; charset=utf-8" \
+     -d @import_test_data.json \
+     http://localhost:8080/api/v1/admin/import-json
+```
 
 ## 🗄️ Database Schema
 
@@ -196,4 +238,4 @@ MIT License
 
 ## 👥 Contributors
 
-- Your Name
+- CTB
