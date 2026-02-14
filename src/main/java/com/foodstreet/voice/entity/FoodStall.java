@@ -43,6 +43,15 @@ public class FoodStall {
     @Builder.Default
     private Integer triggerRadius = 15;
 
+    @Column(name = "price_range")
+    private String priceRange;
+
+    @Column(name = "featured_review", columnDefinition = "TEXT")
+    private String featuredReview;
+
+    @Column(name = "rating")
+    private Double rating;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

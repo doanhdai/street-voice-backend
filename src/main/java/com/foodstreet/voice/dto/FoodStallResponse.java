@@ -19,4 +19,7 @@ public class FoodStallResponse {
     private Integer triggerRadius;
     private String audioUrl;
     private String imageUrl;
+    private String priceRange;
+    private String featuredReview;
+    private Double rating;
 }

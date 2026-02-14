@@ -160,6 +160,9 @@ public class FoodStallService {
                     .triggerRadius(req.getTriggerRadius() != null ? req.getTriggerRadius() : 15)
                     .audioUrl(req.getAudioUrl())
                     .imageUrl(null)
+                    .priceRange(req.getPriceRange())
+                    .featuredReview(req.getFeaturedReview())
+                    .rating(req.getRating())
                     .build();
 
             foodStallRepository.save(stall);
@@ -192,6 +195,9 @@ public class FoodStallService {
                 .triggerRadius(stall.getTriggerRadius())
                 .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
                 .longitude(stall.getLocation() != null ? stall.getLocation().getX() : null)
+                .priceRange(stall.getPriceRange())
+                .featuredReview(stall.getFeaturedReview())
+                .rating(stall.getRating())
                 .build();
     }
 }

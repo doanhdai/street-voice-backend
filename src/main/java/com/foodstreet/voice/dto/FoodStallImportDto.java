@@ -17,4 +17,7 @@ public class FoodStallImportDto {
     private String description;
     private String audioUrl;
     private Integer triggerRadius;
+    private String priceRange;
+    private String featuredReview;
+    private Double rating;
 }
