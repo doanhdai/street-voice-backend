@@ -27,6 +27,9 @@ public class FoodStall {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 500)
+    private String address;
+
     @Column(name = "audio_url", length = 500)
     private String audioUrl;
 
@@ -35,6 +38,10 @@ public class FoodStall {
 
     @Column(columnDefinition = "geography(Point,4326)")
     private Point location;
+
+    @Column(name = "trigger_radius", nullable = false)
+    @Builder.Default
+    private Integer triggerRadius = 15;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

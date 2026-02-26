@@ -37,4 +37,12 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long> {
             @Param("longitude") double longitude);
 
     boolean existsByName(String name);
+
+    // Tim danh sach cac quan an ma nguoi dung dang dung trong vung ban kinh cua no
+    // (Dynamic Radius)
+    // Logic: Distance(User, Stall) <= Stall.triggerRadius
+    @Query(value = "SELECT * FROM food_stalls f " +
+            "WHERE ST_DWithin(CAST(f.location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), f.trigger_radius)", nativeQuery = true)
+    List<FoodStall> findGeofenceMatches(@Param("latitude") double latitude,
+            @Param("longitude") double longitude);
 }

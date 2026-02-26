@@ -7,16 +7,14 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class FoodStallResponse {
-    private Long id;
+@AllArgsConstructor
+public class FoodStallImportDto {
     private String name;
     private String address;
+    private Double lat;
+    private Double lng;
     private String description;
-    private Double latitude;
-    private Double longitude;
-    private Integer triggerRadius;
     private String audioUrl;
-    private String imageUrl;
+    private Integer triggerRadius;
 }
