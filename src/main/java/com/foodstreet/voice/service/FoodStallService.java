@@ -37,6 +37,7 @@ public class FoodStallService {
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("null")
     public FoodStallResponse getStallById(Long id) {
         log.debug("Fetching food stall with id: {}", id);
         FoodStall stall = foodStallRepository.findById(id)
@@ -59,10 +60,11 @@ public class FoodStallService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public FoodStallResponse createStall(CreateFoodStallRequest request) {
         log.debug("Creating new food stall: {}", request.getName());
 
-                Point location = geometryFactory.createPoint(
+        Point location = geometryFactory.createPoint(
                 new Coordinate(request.getLongitude(), request.getLatitude()));
 
         FoodStall stall = FoodStall.builder()
@@ -80,6 +82,7 @@ public class FoodStallService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public FoodStallResponse updateStall(Long id, UpdateFoodStallRequest request) {
         log.debug("Updating food stall with id: {}", id);
 
@@ -87,7 +90,7 @@ public class FoodStallService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Food stall not found with id: " + id));
 
-                if (request.getName() != null) {
+        if (request.getName() != null) {
             stall.setName(request.getName());
         }
         if (request.getDescription() != null) {
@@ -112,6 +115,7 @@ public class FoodStallService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void deleteStall(Long id) {
         log.debug("Deleting food stall with id: {}", id);
 
@@ -130,6 +134,6 @@ public class FoodStallService {
                 .description(stall.getDescription())
                 .audioUrl(stall.getAudioUrl())
                 .imageUrl(stall.getImageUrl())
-                .latitude(stall.getLocation().getY())                 .longitude(stall.getLocation().getX())                 .build();
+                .latitude(stall.getLocation().getY()).longitude(stall.getLocation().getX()).build();
     }
 }
