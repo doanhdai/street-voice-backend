@@ -11,6 +11,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -28,15 +29,16 @@ public class VietMapSyncService {
     @Value("${vietmap.api-key}")
     private String apiKey;
 
-    public VietMapSyncService(RestClient.Builder restClientBuilder,
-            FoodStallRepository foodStallRepository,
-            AudioService audioService,
-            @Value("${vietmap.base-url}") String baseUrl) {
+    public VietMapSyncService(@NonNull RestClient.Builder restClientBuilder,
+            @NonNull FoodStallRepository foodStallRepository,
+            @NonNull AudioService audioService,
+            @NonNull @Value("${vietmap.base-url}") String baseUrl) {
         this.restClient = restClientBuilder.baseUrl(baseUrl).build();
         this.foodStallRepository = foodStallRepository;
         this.audioService = audioService;
     }
 
+    @SuppressWarnings("null")
     public int syncStallsFromVietMap(double lat, double lng, String keyword) {
         log.info("Bat dau sync tu VietMap cho tu khoa '{}' gan {},{}", keyword, lat, lng);
 

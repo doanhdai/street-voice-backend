@@ -37,6 +37,7 @@ public class FoodStallService {
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("null")
     public FoodStallResponse getStallById(Long id) {
         log.debug("Tim kiem quan an theo id: {}", id);
         FoodStall stall = foodStallRepository.findById(id)
@@ -59,6 +60,7 @@ public class FoodStallService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public FoodStallResponse createStall(CreateFoodStallRequest request) {
         log.debug("Tao quan an moi: {}", request.getName());
 
@@ -80,6 +82,7 @@ public class FoodStallService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public FoodStallResponse updateStall(Long id, UpdateFoodStallRequest request) {
         log.debug("Cap nhat quan an co id: {}", id);
 

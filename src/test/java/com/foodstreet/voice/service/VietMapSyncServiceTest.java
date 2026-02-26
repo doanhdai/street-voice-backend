@@ -1,7 +1,5 @@
 package com.foodstreet.voice.service;
 
-import com.foodstreet.voice.dto.vietmap.VietMapPlaceResponse;
-import com.foodstreet.voice.dto.vietmap.VietMapSearchResponse;
 import com.foodstreet.voice.repository.FoodStallRepository;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,9 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +31,7 @@ class VietMapSyncServiceTest {
     private MockRestServiceServer mockServer;
 
     @BeforeEach
+    @SuppressWarnings("null")
     void setUp() {
         // Setup RestClient with MockServer
         RestClient.Builder builder = RestClient.builder()
@@ -48,6 +44,7 @@ class VietMapSyncServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void syncStallsFromVietMap_ShouldSaveNewStalls() {
         // Given
         String keyword = "quan com";
@@ -83,6 +80,7 @@ class VietMapSyncServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void syncStallsFromVietMap_ShouldSkipDuplicates() {
         // Given
         String mockJsonResponse = """
@@ -112,6 +110,7 @@ class VietMapSyncServiceTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void syncStallsFromVietMap_ShouldFetchDetailsExample() {
         // Given: Item with NULL coordinates
         String mockSearchResponse = """
