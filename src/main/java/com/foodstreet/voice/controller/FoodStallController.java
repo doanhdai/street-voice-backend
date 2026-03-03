@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,11 +26,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
+@Tag(name = "Public - Food Stalls", description = "APIs for Mobile App to fetch locations and audio data")
 public class FoodStallController {
 
     private final FoodStallService foodStallService;
 
     @GetMapping
+    @Operation(summary = "Get all food stalls")
     public ResponseEntity<List<FoodStallResponse>> getAllStalls() {
         log.info("Da nhan request de lay tat ca cac quan an");
         List<FoodStallResponse> stalls = foodStallService.getAllStalls();
@@ -37,6 +41,7 @@ public class FoodStallController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a food stall by ID")
     public ResponseEntity<FoodStallResponse> getStallById(@PathVariable Long id) {
         log.info("Da nhan request de lay quan an co id: {}", id);
         FoodStallResponse stall = foodStallService.getStallById(id);
@@ -44,6 +49,7 @@ public class FoodStallController {
     }
 
     @GetMapping("/nearby")
+    @Operation(summary = "Find the nearest food stall")
     public ResponseEntity<FoodStallResponse> findNearestStall(@Valid @ModelAttribute NearbyRequest request) {
         log.info("Da nhan request de tim quan an gan nhat: lat={}, lon={}", request.getLat(), request.getLon());
 
@@ -57,6 +63,7 @@ public class FoodStallController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new food stall")
     public ResponseEntity<FoodStallResponse> createStall(@Valid @RequestBody CreateFoodStallRequest request) {
         log.info("Da nhan request de tao quan an moi: {}", request.getName());
         FoodStallResponse stall = foodStallService.createStall(request);
@@ -65,6 +72,7 @@ public class FoodStallController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update an existing food stall")
     public ResponseEntity<FoodStallResponse> updateStall(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFoodStallRequest request) {
@@ -75,6 +83,7 @@ public class FoodStallController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a food stall")
     public ResponseEntity<Void> deleteStall(@PathVariable Long id) {
         log.info("Da nhan request de xoa quan an co id: {}", id);
         foodStallService.deleteStall(id);
@@ -90,6 +99,7 @@ public class FoodStallController {
 
     // API Sync cho Mobile (Offline)
     @GetMapping("/sync")
+    @Operation(summary = "Sync food stall data for mobile app (offline mode)")
     public ResponseEntity<List<FoodStallResponse>> syncDataForMobile(
             @RequestParam(defaultValue = "10.762622") double lat, // Toa do Q4
             @RequestParam(defaultValue = "106.700174") double lng,

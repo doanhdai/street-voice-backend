@@ -37,3 +37,10 @@ logging:
 vietmap:
   api-key: ${VIETMAP_API_KEY_SERVICES}
   base-url: https://maps.vietmap.vn/api
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method

@@ -13,7 +13,8 @@ public class OpenAPIConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Street Voice API")
-                        .description("Backend API for Food Street Location-based Audio Guide")
-                        .version("1.0"));
+                        .version("1.0")
+                        .description(
+                                "Backend API documentation for Food Street Location-based Audio Guide App. \n\n**Note for Frontend:** Use the `/api/v1/stalls` endpoint to fetch offline data."));
     }
 }

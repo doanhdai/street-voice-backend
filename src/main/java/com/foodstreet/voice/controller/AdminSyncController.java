@@ -9,18 +9,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Admin - Data Management", description = "Internal APIs for syncing and importing POI data")
 public class AdminSyncController {
 
     private final VietMapSyncService vietMapSyncService;
     private final com.foodstreet.voice.service.FoodStallService foodStallService;
 
     @org.springframework.web.bind.annotation.PatchMapping("/stores/{id}/geofence")
+    @Operation(summary = "Update geofence for a stall")
     public ResponseEntity<com.foodstreet.voice.dto.FoodStallResponse> updateGeofence(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @RequestBody com.foodstreet.voice.dto.GeofenceUpdateRequest request) {
@@ -31,6 +35,7 @@ public class AdminSyncController {
     }
 
     @PostMapping("/sync-vietmap")
+    @Operation(summary = "Sync data from VietMap")
     public ResponseEntity<?> syncVietMapData(@RequestBody Map<String, Object> payload) {
         try {
             // Extract params with defaults

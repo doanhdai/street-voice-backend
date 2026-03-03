@@ -99,6 +99,17 @@ java -jar target/street-voice-backend-0.0.1-SNAPSHOT.jar
 
 Ứng dụng sẽ chạy tại: `http://localhost:8080`
 
+## 📖 API Documentation (Swagger UI)
+
+Tài liệu API (Swagger UI) đã được tích hợp sẵn để giúp Frontend team và các developer khác dễ dàng xem và thử nghiệm các API.
+
+**Cách truy cập:**
+1. Đảm bảo ứng dụng đang chạy (qua Docker Compose hoặc chạy thủ công).
+2. Mở trình duyệt và truy cập: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+3. Hoặc xem OpenAPI JSON data tại: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+---
+
 ## 📡 API Endpoints
 
 ### Tìm quán ăn gần nhất

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 
@@ -17,11 +19,13 @@ import java.util.Map;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Admin - Data Management", description = "Internal APIs for syncing and importing POI data")
 public class AdminImportController {
 
     private final FoodStallService foodStallService;
 
     @PostMapping("/import-json")
+    @Operation(summary = "Import curated data from JSON")
     public ResponseEntity<?> importCuratedData(@RequestBody List<FoodStallImportDto> request) {
         log.info("Da nhan du lieu import {} quan an", request.size());
         try {
