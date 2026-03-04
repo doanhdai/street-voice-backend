@@ -138,6 +138,12 @@ public class FoodStallController {
         response.setImageUrl(stall.getImageUrl());
         response.setTriggerRadius(stall.getTriggerRadius());
 
+        // Map new fields
+        response.setMinPrice(stall.getMinPrice());
+        response.setMaxPrice(stall.getMaxPrice());
+        response.setAudioDuration(stall.getAudioDuration());
+        response.setFeaturedReviews(stall.getFeaturedReviews());
+
         // QUAN TRỌNG: Chuyển đổi tọa độ từ PostGIS (Point) sang Lat/Lng
         // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry
         // Object

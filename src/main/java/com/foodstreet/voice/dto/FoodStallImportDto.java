@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,7 +18,9 @@ public class FoodStallImportDto {
     private String description;
     private String audioUrl;
     private Integer triggerRadius;
-    private String priceRange;
-    private String featuredReview;
+    private Integer minPrice;
+    private Integer maxPrice;
+    private Integer audioDuration;
+    private List<String> featuredReviews;
     private Double rating;
 }

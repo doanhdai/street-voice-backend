@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,7 +24,9 @@ public class FoodStallResponse {
     @Schema(description = "URL of the generated audio guide for offline playback", example = "https://storage.example.com/audio/stall_123.mp3")
     private String audioUrl;
     private String imageUrl;
-    private String priceRange;
-    private String featuredReview;
+    private Integer minPrice;
+    private Integer maxPrice;
+    private Integer audioDuration;
+    private List<String> featuredReviews;
     private Double rating;
 }

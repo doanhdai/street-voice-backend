@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -33,4 +34,12 @@ public class CreateFoodStallRequest {
     @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
     @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
     private Double longitude;
+
+    private Integer minPrice;
+
+    private Integer maxPrice;
+
+    private Integer audioDuration;
+
+    private List<String> featuredReviews;
 }

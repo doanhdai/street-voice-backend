@@ -159,7 +159,11 @@ curl "http://localhost:8080/api/v1/stalls/nearby?lat=21.0285&lon=105.8542"
     "lng": 106.7006542,
     "description": "Quán ốc nổi tiếng...",
     "audioUrl": "https://example.com/audio/oc_oanh.mp3",
-    "triggerRadius": 15
+    "triggerRadius": 15,
+    "minPrice": 30000,
+    "maxPrice": 150000,
+    "audioDuration": 120,
+    "featuredReviews": ["Good food", "Nice place"]
   }
 ]
 ```
@@ -183,6 +187,11 @@ curl -X POST -H "Content-Type: application/json; charset=utf-8" \
 | audio_url | VARCHAR(500) | URL file âm thanh |
 | image_url | VARCHAR(500) | URL hình ảnh quán ăn |
 | location | GEOGRAPHY(Point, 4326) | Tọa độ địa lý (PostGIS) |
+| trigger_radius | INTEGER | Khoảng cách kích hoạt |
+| min_price | INTEGER | Giá tối thiểu |
+| max_price | INTEGER | Giá tối đa |
+| audio_duration | INTEGER | Thời lượng audio (giây) |
+| featured_reviews | JSONB | Các đánh giá nổi bật |
 | created_at | TIMESTAMP | Thời gian tạo |
 
 ### Dữ liệu mẫu
