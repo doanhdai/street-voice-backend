@@ -4,17 +4,15 @@
         "address": "534 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
         "lat": 10.7607739,
         "lng": 106.7006542,
-        "description": "Quán Ốc Oanh là một trong những quán ốc – hải sản nổi tiếng bậc nhất trên phố ẩm thực Vĩnh Khánh, với hơn 20 năm hoạt động...",
+        "description": "Quán ốc nổi tiếng với hải sản tươi sống và không gian nhộn nhịp",
         "audioUrl": "https://example.com/audio/oc_oanh.mp3",
-        "triggerRadius": 15
-    },
-    {
-        "name": "Ốc Bụi Quán",
-        "address": "Đường Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
-        "lat": 10.761234,
-        "lng": 106.701567,
-        "description": "Ốc Bụi là quán ốc bình dân được nhiều thực khách yêu thích...",
-        "audioUrl": "https://example.com/audio/oc_bui.mp3",
-        "triggerRadius": 10
+        "triggerRadius": 15,
+        "minPrice": 30000,
+        "maxPrice": 150000,
+        "audioDuration": 120,
+        "featuredReviews": [
+            "Good food",
+            "Nice place"
+        ]
     }
 ]

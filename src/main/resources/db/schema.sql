@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS food_stalls (
     image_url VARCHAR(500),
     location GEOGRAPHY(Point, 4326),
     trigger_radius INTEGER DEFAULT 15,
+    min_price INTEGER,
+    max_price INTEGER,
+    audio_duration INTEGER,
+    featured_reviews JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

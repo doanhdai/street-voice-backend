@@ -6,8 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.locationtech.jts.geom.Point;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "food_stalls")
@@ -42,6 +45,22 @@ public class FoodStall {
     @Column(name = "trigger_radius", nullable = false)
     @Builder.Default
     private Integer triggerRadius = 15;
+
+    @Column(name = "min_price")
+    private Integer minPrice;
+
+    @Column(name = "max_price")
+    private Integer maxPrice;
+
+    @Column(name = "audio_duration")
+    private Integer audioDuration;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "featured_reviews", columnDefinition = "jsonb")
+    private List<String> featuredReviews;
+
+    @Column(name = "rating")
+    private Double rating;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

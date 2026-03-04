@@ -68,7 +68,21 @@ spring:
     password: your_password
 ```
 
-## 🏃 Chạy ứng dụng
+## 🐳 Docker Setup (Full Stack)
+
+Để chạy trọn bộ (Backend + Database) cho Frontend Dev:
+
+### 1. Cấu hình
+Đảm bảo file `.env` đã có API Key (như mục Cài đặt).
+
+### 2. Chạy
+```bash
+docker-compose up --build
+```
+*   Backend: `http://localhost:8080`
+*   Database: `localhost:5432` (User: `postgres`, Pass: `password`, DB: `street_voice_db`)
+
+## 🏃 Chạy ứng dụng (Thủ công)
 
 ### Development mode
 
@@ -84,6 +98,17 @@ java -jar target/street-voice-backend-0.0.1-SNAPSHOT.jar
 ```
 
 Ứng dụng sẽ chạy tại: `http://localhost:8080`
+
+## 📖 API Documentation (Swagger UI)
+
+Tài liệu API (Swagger UI) đã được tích hợp sẵn để giúp Frontend team và các developer khác dễ dàng xem và thử nghiệm các API.
+
+**Cách truy cập:**
+1. Đảm bảo ứng dụng đang chạy (qua Docker Compose hoặc chạy thủ công).
+2. Mở trình duyệt và truy cập: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+3. Hoặc xem OpenAPI JSON data tại: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+---
 
 ## 📡 API Endpoints
 
@@ -118,6 +143,38 @@ curl "http://localhost:8080/api/v1/stalls/nearby?lat=21.0285&lon=105.8542"
 - `404 Not Found`: Không tìm thấy quán ăn nào gần vị trí
 - `500 Internal Server Error`: Lỗi server
 
+### Import Dữ Liệu (JSON)
+
+**Endpoint:** `POST /api/v1/admin/import-json`
+
+**Body:** Danh sách các quán ăn.
+
+**Ví dụ JSON:**
+```json
+[
+  {
+    "name": "Quán Ốc Oanh",
+    "address": "534 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+    "lat": 10.7607739,
+    "lng": 106.7006542,
+    "description": "Quán ốc nổi tiếng...",
+    "audioUrl": "https://example.com/audio/oc_oanh.mp3",
+    "triggerRadius": 15,
+    "minPrice": 30000,
+    "maxPrice": 150000,
+    "audioDuration": 120,
+    "featuredReviews": ["Good food", "Nice place"]
+  }
+]
+```
+
+**Curl Command:**
+```bash
+curl -X POST -H "Content-Type: application/json; charset=utf-8" \
+     -d @import_test_data.json \
+     http://localhost:8080/api/v1/admin/import-json
+```
+
 ## 🗄️ Database Schema
 
 ### Bảng `food_stalls`
@@ -130,6 +187,11 @@ curl "http://localhost:8080/api/v1/stalls/nearby?lat=21.0285&lon=105.8542"
 | audio_url | VARCHAR(500) | URL file âm thanh |
 | image_url | VARCHAR(500) | URL hình ảnh quán ăn |
 | location | GEOGRAPHY(Point, 4326) | Tọa độ địa lý (PostGIS) |
+| trigger_radius | INTEGER | Khoảng cách kích hoạt |
+| min_price | INTEGER | Giá tối thiểu |
+| max_price | INTEGER | Giá tối đa |
+| audio_duration | INTEGER | Thời lượng audio (giây) |
+| featured_reviews | JSONB | Các đánh giá nổi bật |
 | created_at | TIMESTAMP | Thời gian tạo |
 
 ### Dữ liệu mẫu
@@ -196,4 +258,4 @@ MIT License
 
 ## 👥 Contributors
 
-- Your Name
+- CTB

@@ -73,6 +73,10 @@ public class FoodStallService {
                 .audioUrl(request.getAudioUrl())
                 .imageUrl(request.getImageUrl())
                 .location(location)
+                .minPrice(request.getMinPrice())
+                .maxPrice(request.getMaxPrice())
+                .audioDuration(request.getAudioDuration())
+                .featuredReviews(request.getFeaturedReviews())
                 .build();
 
         FoodStall savedStall = foodStallRepository.save(stall);
@@ -101,6 +105,18 @@ public class FoodStallService {
         }
         if (request.getImageUrl() != null) {
             stall.setImageUrl(request.getImageUrl());
+        }
+        if (request.getMinPrice() != null) {
+            stall.setMinPrice(request.getMinPrice());
+        }
+        if (request.getMaxPrice() != null) {
+            stall.setMaxPrice(request.getMaxPrice());
+        }
+        if (request.getAudioDuration() != null) {
+            stall.setAudioDuration(request.getAudioDuration());
+        }
+        if (request.getFeaturedReviews() != null) {
+            stall.setFeaturedReviews(request.getFeaturedReviews());
         }
         if (request.getLatitude() != null && request.getLongitude() != null) {
             Point location = geometryFactory.createPoint(
@@ -163,6 +179,11 @@ public class FoodStallService {
                     .triggerRadius(req.getTriggerRadius() != null ? req.getTriggerRadius() : 15)
                     .audioUrl(req.getAudioUrl())
                     .imageUrl(null)
+                    .minPrice(req.getMinPrice())
+                    .maxPrice(req.getMaxPrice())
+                    .audioDuration(req.getAudioDuration())
+                    .featuredReviews(req.getFeaturedReviews())
+                    .rating(req.getRating())
                     .build();
 
             foodStallRepository.save(stall);
@@ -195,6 +216,11 @@ public class FoodStallService {
                 .triggerRadius(stall.getTriggerRadius())
                 .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
                 .longitude(stall.getLocation() != null ? stall.getLocation().getX() : null)
+                .minPrice(stall.getMinPrice())
+                .maxPrice(stall.getMaxPrice())
+                .audioDuration(stall.getAudioDuration())
+                .featuredReviews(stall.getFeaturedReviews())
+                .rating(stall.getRating())
                 .build();
     }
 }

@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/analytics")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Analytics", description = "User Activity Tracking API")
+@Tag(name = "Public - Analytics", description = "APIs for tracking user listening events")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
