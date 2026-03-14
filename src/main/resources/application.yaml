@@ -49,3 +49,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+
+app:
+  audio:
+    local-path: /app/audio
+    base-url: ${AUDIO_BASE_URL:http://localhost:8080}
