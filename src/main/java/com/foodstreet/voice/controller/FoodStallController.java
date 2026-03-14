@@ -48,6 +48,29 @@ public class FoodStallController {
         return ResponseEntity.ok(stall);
     }
 
+    @GetMapping("/{id}/audio")
+    @Operation(summary = "Get audio URL for a specific food stall")
+    public ResponseEntity<?> getAudioByStallId(@PathVariable Long id) {
+        log.info("Nhan request lay audio cho quan an id: {}", id);
+        FoodStallResponse stall = foodStallService.getStallById(id);
+        String audioUrl = stall.getAudioUrl();
+        if (audioUrl == null || audioUrl.isBlank()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "id", id,
+                "name", stall.getName(),
+                "audioUrl", "",
+                "message", "Quan nay chua co audio. Vui long goi API /sync truoc."
+            ));
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+            "id", id,
+            "name", stall.getName(),
+            "audioUrl", audioUrl,
+            "audioDuration", stall.getAudioDuration() != null ? stall.getAudioDuration() : 0
+        ));
+    }
+
+
     @GetMapping("/nearby")
     @Operation(summary = "Find the nearest food stall")
     public ResponseEntity<FoodStallResponse> findNearestStall(@Valid @ModelAttribute NearbyRequest request) {

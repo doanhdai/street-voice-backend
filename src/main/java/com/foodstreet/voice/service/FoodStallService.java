@@ -6,6 +6,7 @@ import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallRepository;
+import com.foodstreet.voice.config.AudioProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -24,7 +25,17 @@ import java.util.stream.Collectors;
 public class FoodStallService {
 
     private final FoodStallRepository foodStallRepository;
+    private final AudioProperties audioProperties;
     private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+
+    // Xây dựng audio URL đầy đủ từ filename hoặc URL đã có
+    private String resolveAudioUrl(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        // Nếu đã là URL đầy đủ (http/https) thì giữ nguyên
+        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+        // Ngược lại, coi nó là filename và build URL tuyệt đối
+        return audioProperties.buildAudioUrl(raw);
+    }
 
     @Transactional(readOnly = true)
     public List<FoodStallResponse> getAllStalls() {
@@ -211,7 +222,7 @@ public class FoodStallService {
                 .name(stall.getName())
                 .address(stall.getAddress())
                 .description(stall.getDescription())
-                .audioUrl(stall.getAudioUrl())
+                .audioUrl(resolveAudioUrl(stall.getAudioUrl()))
                 .imageUrl(stall.getImageUrl())
                 .triggerRadius(stall.getTriggerRadius())
                 .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
