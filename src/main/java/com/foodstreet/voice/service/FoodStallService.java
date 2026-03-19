@@ -13,9 +13,14 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +40,44 @@ public class FoodStallService {
         if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
         // Ngược lại, coi nó là filename và build URL tuyệt đối
         return audioProperties.buildAudioUrl(raw);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FoodStallResponse> searchStalls(String keyword, Integer minPrice, Integer maxPrice, Double minRating,
+            Pageable pageable) {
+        log.debug("Searching stalls with keyword={}, minPrice={}, maxPrice={}, minRating={}", keyword, minPrice,
+                maxPrice, minRating);
+
+        Specification<FoodStall> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (keyword != null && !keyword.isEmpty()) {
+                String likeKeyword = "%" + keyword.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), likeKeyword),
+                        cb.like(cb.lower(root.get("description")), likeKeyword),
+                        cb.like(cb.lower(root.get("address")), likeKeyword)));
+            }
+
+            if (minPrice != null) {
+                // Stall is relevant if its MAX price is at least the filter's MIN price
+                predicates.add(cb.greaterThanOrEqualTo(root.get("maxPrice"), minPrice));
+            }
+
+            if (maxPrice != null) {
+                // Stall is relevant if its MIN price is at most the filter's MAX price
+                predicates.add(cb.lessThanOrEqualTo(root.get("minPrice"), maxPrice));
+            }
+
+            if (minRating != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return foodStallRepository.findAll(spec, pageable)
+                .map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
