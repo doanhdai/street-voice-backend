@@ -8,6 +8,7 @@ import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.repository.FoodStallRepository;
 import com.foodstreet.voice.service.AudioService;
 import com.foodstreet.voice.service.FoodStallService;
+import com.foodstreet.voice.service.LocalizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 public class FoodStallController {
 
     private final FoodStallService foodStallService;
+    private final LocalizationService localizationService;
 
     @GetMapping("/search")
     @Operation(summary = "Search and filter food stalls with pagination")
@@ -59,10 +62,12 @@ public class FoodStallController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get a food stall by ID")
-    public ResponseEntity<FoodStallResponse> getStallById(@PathVariable Long id) {
-        log.info("Da nhan request de lay quan an co id: {}", id);
-        FoodStallResponse stall = foodStallService.getStallById(id);
+    @Operation(summary = "Get a food stall by ID with optional language (fallback to vi)")
+    public ResponseEntity<FoodStallResponse> getStallById(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "vi") String lang) {
+        log.info("Da nhan request de lay quan an co id: {}, lang={}", id, lang);
+        FoodStallResponse stall = foodStallService.getStallByIdWithLang(id, lang);
         return ResponseEntity.ok(stall);
     }
 
@@ -98,6 +103,25 @@ public class FoodStallController {
         FoodStallResponse stall = foodStallService.updateStall(id, request);
         log.info("Cap nhat quan an: {}", stall.getName());
         return ResponseEntity.ok(stall);
+    }
+
+    @PostMapping("/{id}/audio/generate")
+    @Operation(summary = "On-demand: generate/regenerate audio for a food stall in a specific language")
+    public ResponseEntity<?> generateAudioOnDemand(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "vi") String lang) {
+        log.info("On-demand audio generate: stallId={}, lang={}", id, lang);
+        try {
+            String audioUrl = localizationService.generateLocalization(id, lang);
+            return ResponseEntity.ok(Map.of(
+                    "audioUrl", audioUrl,
+                    "language", lang,
+                    "cached", false
+            ));
+        } catch (Exception e) {
+            log.error("Failed to generate audio on-demand for stallId={}, lang={}: {}", id, lang, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")
