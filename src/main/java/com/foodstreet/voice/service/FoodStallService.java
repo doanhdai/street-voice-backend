@@ -4,7 +4,9 @@ import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
+import com.foodstreet.voice.entity.FoodStallLocalization;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
+import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.repository.FoodStallRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,10 @@ import java.util.stream.Collectors;
 public class FoodStallService {
 
     private final FoodStallRepository foodStallRepository;
+    private final FoodStallLocalizationRepository localizationRepository;
     private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+    private static final String DEFAULT_LANG = "vi";
+
 
     @Transactional(readOnly = true)
     public Page<FoodStallResponse> searchStalls(String keyword, Integer minPrice, Integer maxPrice, Double minRating,
@@ -82,11 +87,33 @@ public class FoodStallService {
     @Transactional(readOnly = true)
     @SuppressWarnings("null")
     public FoodStallResponse getStallById(Long id) {
-        log.debug("Tim kiem quan an theo id: {}", id);
+        return getStallByIdWithLang(id, DEFAULT_LANG);
+    }
+
+    @Transactional(readOnly = true)
+    @SuppressWarnings("null")
+    public FoodStallResponse getStallByIdWithLang(Long id, String lang) {
+        log.debug("Tim kiem quan an theo id={}, lang={}", id, lang);
         FoodStall stall = foodStallRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Quan an khong ton tai: " + id));
-        return mapToResponse(stall);
+
+        // Thu tim localization theo lang yeu cau
+        String effectiveLang = lang;
+        FoodStallLocalization localization = localizationRepository
+                .findByFoodStallIdAndLanguageCode(id, lang)
+                .orElse(null);
+
+        // Fallback ve tieng Viet neu khong co
+        if (localization == null && !DEFAULT_LANG.equals(lang)) {
+            log.debug("Khong co localization lang={}, fallback sang vi", lang);
+            effectiveLang = DEFAULT_LANG;
+            localization = localizationRepository
+                    .findByFoodStallIdAndLanguageCode(id, DEFAULT_LANG)
+                    .orElse(null);
+        }
+
+        return mapToResponseWithLang(stall, localization, effectiveLang);
     }
 
     @Transactional(readOnly = true)
@@ -249,12 +276,20 @@ public class FoodStallService {
     }
 
     private FoodStallResponse mapToResponse(FoodStall stall) {
+        return mapToResponseWithLang(stall, null, DEFAULT_LANG);
+    }
+
+    private FoodStallResponse mapToResponseWithLang(FoodStall stall, FoodStallLocalization loc, String usedLang) {
+        String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
+        String description = (loc != null && loc.getDescription() != null) ? loc.getDescription() : stall.getDescription();
+        String audioUrl = (loc != null && loc.getAudioUrl() != null) ? loc.getAudioUrl() : stall.getAudioUrl();
+
         return FoodStallResponse.builder()
                 .id(stall.getId())
-                .name(stall.getName())
+                .name(name)
                 .address(stall.getAddress())
-                .description(stall.getDescription())
-                .audioUrl(stall.getAudioUrl())
+                .description(description)
+                .audioUrl(audioUrl)
                 .imageUrl(stall.getImageUrl())
                 .triggerRadius(stall.getTriggerRadius())
                 .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
@@ -264,6 +299,7 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
+                .usedLanguage(usedLang)
                 .build();
     }
 }
