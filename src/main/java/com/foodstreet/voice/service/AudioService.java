@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,6 +31,8 @@ public class AudioService {
     private FoodStallRepository foodStallRepository;
 
     private final String UPLOAD_DIR = "./uploads/audio/";
+    
+    private final ConcurrentHashMap<String, CompletableFuture<String>> inProgressTasks = new ConcurrentHashMap<>();
 
     @SuppressWarnings("null")
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
@@ -42,14 +46,26 @@ public class AudioService {
                 return "/audio/" + fileName;
             }
 
-            byte[] audioData = audioProvider.generateAudio(text, languageCode);
-            FileCopyUtils.copy(audioData, filePath.toFile());
-
-            return "/audio/" + fileName;
-        } catch (IOException e) {
+            String cacheKey = fileName;
+            return inProgressTasks.computeIfAbsent(cacheKey, key -> generateAudioAsync(key, text, languageCode, filePath)).join();
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private CompletableFuture<String> generateAudioAsync(String cacheKey, String text, String languageCode, Path filePath) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                byte[] audioData = audioProvider.generateAudio(text, languageCode);
+                FileCopyUtils.copy(audioData, filePath.toFile());
+                return "/audio/" + cacheKey;
+            } catch (Exception e) {
+                throw new RuntimeException("Error generating audio", e);
+            }
+        }).whenComplete((result, ex) -> {
+            inProgressTasks.remove(cacheKey);
+        });
     }
 
     public List<String> listAllAudioFiles() {

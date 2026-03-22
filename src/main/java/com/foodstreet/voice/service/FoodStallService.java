@@ -2,6 +2,8 @@ package com.foodstreet.voice.service;
 
 import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
+import com.foodstreet.voice.dto.GeofenceStallResponse;
+import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
@@ -275,6 +277,29 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
+                .priority(stall.getPriority())
                 .build();
     }
-}
+
+    @Transactional(readOnly = true)
+    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius) {
+        log.debug("Finding geofence matches for lat={}, lng={}, radius={}", lat, lng, radius);
+        return foodStallRepository.findGeofenceMatches(lat, lng, radius).stream()
+                .map(this::mapToGeofenceResponse)
+                .collect(Collectors.toList());
+    }
+
+    private GeofenceStallResponse mapToGeofenceResponse(GeofenceMatchProjection projection) {
+        return GeofenceStallResponse.builder()
+                .id(projection.getId())
+                .name(projection.getName())
+                .description(projection.getDescription())
+                .latitude(projection.getLatitude())
+                .longitude(projection.getLongitude())
+                .triggerRadius(projection.getTriggerRadius())
+                .audioUrl(resolveAudioUrl(projection.getAudioUrl()))
+                .distance(projection.getDistance())
+                .priority(projection.getPriority())
+                .build();
+    }
+}

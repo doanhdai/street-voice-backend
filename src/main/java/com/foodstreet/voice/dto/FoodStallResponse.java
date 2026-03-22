@@ -29,4 +29,5 @@ public class FoodStallResponse {
     private Integer audioDuration;
     private List<String> featuredReviews;
     private Double rating;
-}
+    private Integer priority;
+}
