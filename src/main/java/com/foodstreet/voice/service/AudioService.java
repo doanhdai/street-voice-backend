@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
@@ -38,16 +39,18 @@ public class AudioService {
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
-            // Su dung text truncate hoac hash de tinh ten file
-            String fileName = Math.abs(text.hashCode()) + "_" + languageCode + ".mp3";
+            // Dung MD5 hash de tinh ten file (khong bi collision nhu hashCode)
+            String hash = DigestUtils.md5DigestAsHex(text.getBytes());
+            String fileName = hash + "_" + languageCode + ".mp3";
             Path filePath = Paths.get(UPLOAD_DIR + fileName);
 
             if (Files.exists(filePath)) {
                 return "/audio/" + fileName;
             }
 
-            String cacheKey = fileName;
-            return inProgressTasks.computeIfAbsent(cacheKey, key -> generateAudioAsync(key, text, languageCode, filePath)).join();
+            // Use explicit cache key pattern to strictly differentiate by text hash and language
+            String cacheKey = hash + "_" + languageCode;
+            return inProgressTasks.computeIfAbsent(cacheKey, key -> generateAudioAsync(fileName, text, languageCode, filePath)).join();
         } catch (Exception e) {
             e.printStackTrace();
             return null;

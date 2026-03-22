@@ -6,7 +6,9 @@ import com.foodstreet.voice.dto.GeofenceStallResponse;
 import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
+import com.foodstreet.voice.entity.FoodStallLocalization;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
+import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.repository.FoodStallRepository;
 import com.foodstreet.voice.config.AudioProperties;
 import lombok.RequiredArgsConstructor;
@@ -32,17 +34,9 @@ import java.util.stream.Collectors;
 public class FoodStallService {
 
     private final FoodStallRepository foodStallRepository;
-    private final AudioProperties audioProperties;
+    private final FoodStallLocalizationRepository localizationRepository;
     private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-
-    // Xây dựng audio URL đầy đủ từ filename hoặc URL đã có
-    private String resolveAudioUrl(String raw) {
-        if (raw == null || raw.isBlank()) return null;
-        // Nếu đã là URL đầy đủ (http/https) thì giữ nguyên
-        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-        // Ngược lại, coi nó là filename và build URL tuyệt đối
-        return audioProperties.buildAudioUrl(raw);
-    }
+    private static final String DEFAULT_LANG = "vi";
 
     @Transactional(readOnly = true)
     public Page<FoodStallResponse> searchStalls(String keyword, Integer minPrice, Integer maxPrice, Double minRating,
@@ -95,11 +89,33 @@ public class FoodStallService {
     @Transactional(readOnly = true)
     @SuppressWarnings("null")
     public FoodStallResponse getStallById(Long id) {
-        log.debug("Tim kiem quan an theo id: {}", id);
+        return getStallByIdWithLang(id, DEFAULT_LANG);
+    }
+
+    @Transactional(readOnly = true)
+    @SuppressWarnings("null")
+    public FoodStallResponse getStallByIdWithLang(Long id, String lang) {
+        log.debug("Tim kiem quan an theo id={}, lang={}", id, lang);
         FoodStall stall = foodStallRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Quan an khong ton tai: " + id));
-        return mapToResponse(stall);
+
+        // Thu tim localization theo lang yeu cau
+        String effectiveLang = lang;
+        FoodStallLocalization localization = localizationRepository
+                .findByFoodStallIdAndLanguageCode(id, lang)
+                .orElse(null);
+
+        // Fallback ve tieng Viet neu khong co
+        if (localization == null && !DEFAULT_LANG.equals(lang)) {
+            log.debug("Khong co localization lang={}, fallback sang vi", lang);
+            effectiveLang = DEFAULT_LANG;
+            localization = localizationRepository
+                    .findByFoodStallIdAndLanguageCode(id, DEFAULT_LANG)
+                    .orElse(null);
+        }
+
+        return mapToResponseWithLang(stall, localization, effectiveLang);
     }
 
     @Transactional(readOnly = true)
@@ -113,6 +129,25 @@ public class FoodStallService {
         log.debug("Tim thay quan an gan nhat: {}", stall.getName());
 
         return mapToResponse(stall);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius) {
+        log.debug("Get geofence matches lat={}, lng={}, radius={}", lat, lng, radius);
+        
+        List<GeofenceMatchProjection> projections = foodStallRepository.findGeofenceMatches(lat, lng, radius);
+        
+        return projections.stream().map(p -> GeofenceStallResponse.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .description(p.getDescription())
+                .audioUrl(p.getAudioUrl())
+                .triggerRadius(p.getTriggerRadius())
+                .priority(p.getPriority())
+                .latitude(p.getLatitude())
+                .longitude(p.getLongitude())
+                .distance(p.getDistance())
+                .build()).collect(Collectors.toList());
     }
 
     @Transactional
@@ -262,12 +297,21 @@ public class FoodStallService {
     }
 
     private FoodStallResponse mapToResponse(FoodStall stall) {
+        return mapToResponseWithLang(stall, null, DEFAULT_LANG);
+    }
+
+    private FoodStallResponse mapToResponseWithLang(FoodStall stall, FoodStallLocalization loc, String usedLang) {
+        String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
+        String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
+                : stall.getDescription();
+        String audioUrl = (loc != null && loc.getAudioUrl() != null) ? loc.getAudioUrl() : stall.getAudioUrl();
+
         return FoodStallResponse.builder()
                 .id(stall.getId())
-                .name(stall.getName())
+                .name(name)
                 .address(stall.getAddress())
-                .description(stall.getDescription())
-                .audioUrl(resolveAudioUrl(stall.getAudioUrl()))
+                .description(description)
+                .audioUrl(audioUrl)
                 .imageUrl(stall.getImageUrl())
                 .triggerRadius(stall.getTriggerRadius())
                 .latitude(stall.getLocation() != null ? stall.getLocation().getY() : null)
@@ -277,29 +321,7 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
-                .priority(stall.getPriority())
+                .usedLanguage(usedLang)
                 .build();
     }
-
-    @Transactional(readOnly = true)
-    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius) {
-        log.debug("Finding geofence matches for lat={}, lng={}, radius={}", lat, lng, radius);
-        return foodStallRepository.findGeofenceMatches(lat, lng, radius).stream()
-                .map(this::mapToGeofenceResponse)
-                .collect(Collectors.toList());
-    }
-
-    private GeofenceStallResponse mapToGeofenceResponse(GeofenceMatchProjection projection) {
-        return GeofenceStallResponse.builder()
-                .id(projection.getId())
-                .name(projection.getName())
-                .description(projection.getDescription())
-                .latitude(projection.getLatitude())
-                .longitude(projection.getLongitude())
-                .triggerRadius(projection.getTriggerRadius())
-                .audioUrl(resolveAudioUrl(projection.getAudioUrl()))
-                .distance(projection.getDistance())
-                .priority(projection.getPriority())
-                .build();
-    }
-}
+}
