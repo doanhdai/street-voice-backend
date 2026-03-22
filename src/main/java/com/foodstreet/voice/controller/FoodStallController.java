@@ -2,6 +2,7 @@ package com.foodstreet.voice.controller;
 
 import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
+import com.foodstreet.voice.dto.GeofenceStallResponse;
 import com.foodstreet.voice.dto.NearbyRequest;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
@@ -52,6 +53,18 @@ public class FoodStallController {
         return ResponseEntity.ok(results);
     }
 
+    @GetMapping("/geofence")
+    @Operation(summary = "Get food stalls within geofence radius, ordered by priority and distance",
+               description = "API dành cho Mobile App (Flutter) để quét danh sách các quán ăn xung quanh vị trí hiện tại của người dùng. Trả về tối đa 5 quán, ưu tiên quán có priority cao trước, sau đó mới xét đến khoảng cách.")
+    public ResponseEntity<List<GeofenceStallResponse>> getGeofenceMatches(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Vĩ độ (Latitude) hiện tại của người dùng", example = "10.762622") @RequestParam double lat,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Kinh độ (Longitude) hiện tại của người dùng", example = "106.700174") @RequestParam double lng,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Bán kính quét để lọc quán (mặc định 50 mét)", example = "50.0") @RequestParam(defaultValue = "50.0") double radius) {
+        log.info("Received request for geofence matches: lat={}, lng={}, radius={}", lat, lng, radius);
+        List<GeofenceStallResponse> results = foodStallService.getGeofenceMatches(lat, lng, radius);
+        return ResponseEntity.ok(results);
+    }
+
     @GetMapping
     @Operation(summary = "Get all food stalls")
     public ResponseEntity<List<FoodStallResponse>> getAllStalls() {
@@ -70,6 +83,29 @@ public class FoodStallController {
         FoodStallResponse stall = foodStallService.getStallByIdWithLang(id, lang);
         return ResponseEntity.ok(stall);
     }
+
+    @GetMapping("/{id}/audio")
+    @Operation(summary = "Get audio URL for a specific food stall")
+    public ResponseEntity<?> getAudioByStallId(@PathVariable Long id) {
+        log.info("Nhan request lay audio cho quan an id: {}", id);
+        FoodStallResponse stall = foodStallService.getStallById(id);
+        String audioUrl = stall.getAudioUrl();
+        if (audioUrl == null || audioUrl.isBlank()) {
+            return ResponseEntity.ok(java.util.Map.of(
+                "id", id,
+                "name", stall.getName(),
+                "audioUrl", "",
+                "message", "Quan nay chua co audio. Vui long goi API /sync truoc."
+            ));
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+            "id", id,
+            "name", stall.getName(),
+            "audioUrl", audioUrl,
+            "audioDuration", stall.getAudioDuration() != null ? stall.getAudioDuration() : 0
+        ));
+    }
+
 
     @GetMapping("/nearby")
     @Operation(summary = "Find the nearest food stall")
