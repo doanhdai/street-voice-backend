@@ -2,12 +2,15 @@ package com.foodstreet.voice.service;
 
 import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
+import com.foodstreet.voice.dto.GeofenceStallResponse;
+import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.entity.FoodStallLocalization;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.repository.FoodStallRepository;
+import com.foodstreet.voice.config.AudioProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -37,7 +40,6 @@ public class FoodStallService {
     private final LocalizationService localizationService;
     private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private static final String DEFAULT_LANG = "vi";
-
 
     @Transactional(readOnly = true)
     public Page<FoodStallResponse> searchStalls(String keyword, Integer minPrice, Integer maxPrice, Double minRating,
@@ -159,6 +161,25 @@ public class FoodStallService {
         log.debug("Tim thay quan an gan nhat: {}", stall.getName());
 
         return getStallByIdWithLang(stall.getId(), lang);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius) {
+        log.debug("Get geofence matches lat={}, lng={}, radius={}", lat, lng, radius);
+        
+        List<GeofenceMatchProjection> projections = foodStallRepository.findGeofenceMatches(lat, lng, radius);
+        
+        return projections.stream().map(p -> GeofenceStallResponse.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .description(p.getDescription())
+                .audioUrl(p.getAudioUrl())
+                .triggerRadius(p.getTriggerRadius())
+                .priority(p.getPriority())
+                .latitude(p.getLatitude())
+                .longitude(p.getLongitude())
+                .distance(p.getDistance())
+                .build()).collect(Collectors.toList());
     }
 
     @Transactional
@@ -321,7 +342,8 @@ public class FoodStallService {
 
     private FoodStallResponse mapToResponseWithLang(FoodStall stall, FoodStallLocalization loc, String usedLang) {
         String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
-        String description = (loc != null && loc.getDescription() != null) ? loc.getDescription() : stall.getDescription();
+        String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
+                : stall.getDescription();
         String audioUrl = (loc != null && loc.getAudioUrl() != null) ? loc.getAudioUrl() : stall.getAudioUrl();
 
         return FoodStallResponse.builder()
