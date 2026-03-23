@@ -64,4 +64,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 @Param("latitude") double latitude, 
                 @Param("longitude") double longitude,
                 @Param("radius") double radius);
+
+        @Query("SELECT MAX(f.createdAt) FROM FoodStall f")
+        Optional<java.time.LocalDateTime> findMaxCreatedAt();
 }

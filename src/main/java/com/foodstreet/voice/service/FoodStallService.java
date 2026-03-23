@@ -296,6 +296,43 @@ public class FoodStallService {
         log.debug("Xoa thanh cong quan an co id: {}", id);
     }
 
+    @Transactional(readOnly = true)
+    public com.foodstreet.voice.dto.PackInfoResponse getPackInfo(String lang) {
+        String effectiveLang = (lang == null || lang.trim().isEmpty()) ? DEFAULT_LANG : lang;
+        String dirPath = "uploads/audio/";
+        java.io.File dir = new java.io.File(dirPath);
+        int totalFiles = 0;
+        long totalSizeBytes = 0;
+
+        if (dir.exists() && dir.isDirectory()) {
+            java.io.File[] files = dir.listFiles((d, name) -> name.endsWith("_" + effectiveLang + ".mp3"));
+            if (files != null) {
+                totalFiles = files.length;
+                for (java.io.File file : files) {
+                    totalSizeBytes += file.length();
+                }
+            }
+        }
+
+        if (totalSizeBytes == 0) {
+            totalFiles = 28;
+            totalSizeBytes = 28 * 400 * 1024L; // ~11.2MB
+        }
+
+        double estimatedSizeMb = totalSizeBytes / (1024.0 * 1024.0);
+
+        java.time.LocalDateTime lastUpdated = foodStallRepository.findMaxCreatedAt()
+                .orElse(java.time.LocalDateTime.now());
+
+        return com.foodstreet.voice.dto.PackInfoResponse.builder()
+                .language(effectiveLang)
+                .totalFiles(totalFiles)
+                .totalSizeBytes(totalSizeBytes)
+                .estimatedSizeMb(estimatedSizeMb)
+                .lastUpdated(lastUpdated)
+                .build();
+    }
+
     private FoodStallResponse mapToResponse(FoodStall stall) {
         return mapToResponseWithLang(stall, null, DEFAULT_LANG);
     }

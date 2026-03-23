@@ -203,6 +203,14 @@ public class FoodStallController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/pack-info")
+    @Operation(summary = "Get audio pack info and latest data version for offline downloading")
+    public ResponseEntity<com.foodstreet.voice.dto.PackInfoResponse> getPackInfo(
+            @RequestParam(defaultValue = "vi") String lang) {
+        log.info("Received request for pack info with lang={}", lang);
+        return ResponseEntity.ok(foodStallService.getPackInfo(lang));
+    }
+
     private FoodStallResponse convertToResponse(FoodStall stall) {
         FoodStallResponse response = new FoodStallResponse();
 
