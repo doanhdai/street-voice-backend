@@ -1,8 +1,10 @@
 package com.foodstreet.voice.service;
 
 import com.foodstreet.voice.entity.FoodStall;
+import com.foodstreet.voice.entity.FoodStallLocalization;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallRepository;
+import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.service.audio.AudioProviderStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,27 +24,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.foodstreet.voice.config.AudioProperties;
+
 @Service
 @RequiredArgsConstructor
 public class AudioService {
     private final AudioProviderStrategy audioProvider;
+    private final AudioProperties audioProperties;
 
     @Autowired
     @Lazy
     private FoodStallRepository foodStallRepository;
 
-    private final String UPLOAD_DIR = "./uploads/audio/";
-    
+    @Autowired
+    @Lazy
+    private FoodStallLocalizationRepository localizationRepository;
+
     private final ConcurrentHashMap<String, CompletableFuture<String>> inProgressTasks = new ConcurrentHashMap<>();
+
+    private String getUploadDir() {
+        String path = audioProperties.getLocalPath();
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        return path;
+    }
 
     @SuppressWarnings("null")
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
         try {
-            Files.createDirectories(Paths.get(UPLOAD_DIR));
+            Files.createDirectories(Paths.get(getUploadDir()));
             // Dung MD5 hash de tinh ten file (khong bi collision nhu hashCode)
             String hash = DigestUtils.md5DigestAsHex(text.getBytes());
             String fileName = hash + "_" + languageCode + ".mp3";
-            Path filePath = Paths.get(UPLOAD_DIR + fileName);
+            Path filePath = Paths.get(getUploadDir() + fileName);
 
             if (Files.exists(filePath)) {
                 return "/audio/" + fileName;
@@ -72,7 +87,7 @@ public class AudioService {
     }
 
     public List<String> listAllAudioFiles() {
-        try (Stream<Path> stream = Files.list(Paths.get(UPLOAD_DIR))) {
+        try (Stream<Path> stream = Files.list(Paths.get(getUploadDir()))) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
                     .map(Path::getFileName)
@@ -85,7 +100,7 @@ public class AudioService {
 
     public boolean deleteAudioFile(String fileName) {
         try {
-            Path filePath = Paths.get(UPLOAD_DIR + fileName);
+            Path filePath = Paths.get(getUploadDir() + fileName);
             return Files.deleteIfExists(filePath);
         } catch (IOException e) {
             return false;
@@ -119,6 +134,14 @@ public class AudioService {
                 .filter(url -> url != null && url.startsWith("/audio/"))
                 .map(url -> url.replace("/audio/", ""))
                 .collect(Collectors.toList());
+
+        List<String> locFiles = localizationRepository.findAll().stream()
+                .map(FoodStallLocalization::getAudioUrl)
+                .filter(url -> url != null && url.startsWith("/audio/"))
+                .map(url -> url.replace("/audio/", ""))
+                .collect(Collectors.toList());
+
+        linkedFiles.addAll(locFiles);
 
         return allFiles.stream()
                 .filter(file -> !linkedFiles.contains(file))
