@@ -45,11 +45,12 @@ public class FoodStallController {
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(required = false) Double minRating,
+            @RequestParam(defaultValue = "vi") String lang,
             @PageableDefault(size = 10) Pageable pageable) {
-        log.info("Received request to search stalls: keyword={}, minPrice={}, maxPrice={}, minRating={}",
-                keyword, minPrice, maxPrice, minRating);
+        log.info("Received request to search stalls: keyword={}, minPrice={}, maxPrice={}, minRating={}, lang={}",
+                keyword, minPrice, maxPrice, minRating, lang);
         Page<FoodStallResponse> results = foodStallService.searchStalls(keyword, minPrice, maxPrice, minRating,
-                pageable);
+                lang, pageable);
         return ResponseEntity.ok(results);
     }
 
@@ -67,9 +68,9 @@ public class FoodStallController {
 
     @GetMapping
     @Operation(summary = "Get all food stalls")
-    public ResponseEntity<List<FoodStallResponse>> getAllStalls() {
-        log.info("Da nhan request de lay tat ca cac quan an");
-        List<FoodStallResponse> stalls = foodStallService.getAllStalls();
+    public ResponseEntity<List<FoodStallResponse>> getAllStalls(@RequestParam(defaultValue = "vi") String lang) {
+        log.info("Da nhan request de lay tat ca cac quan an, lang={}", lang);
+        List<FoodStallResponse> stalls = foodStallService.getAllStalls(lang);
         log.info("Returning {} food stalls", stalls.size());
         return ResponseEntity.ok(stalls);
     }
@@ -109,12 +110,15 @@ public class FoodStallController {
 
     @GetMapping("/nearby")
     @Operation(summary = "Find the nearest food stall")
-    public ResponseEntity<FoodStallResponse> findNearestStall(@Valid @ModelAttribute NearbyRequest request) {
-        log.info("Da nhan request de tim quan an gan nhat: lat={}, lon={}", request.getLat(), request.getLon());
+    public ResponseEntity<FoodStallResponse> findNearestStall(
+            @Valid @ModelAttribute NearbyRequest request,
+            @RequestParam(defaultValue = "vi") String lang) {
+        log.info("Da nhan request de tim quan an gan nhat: lat={}, lon={}, lang={}", request.getLat(), request.getLon(), lang);
 
         FoodStallResponse response = foodStallService.findNearestStall(
                 request.getLat(),
-                request.getLon());
+                request.getLon(),
+                lang);
 
         log.info("Da tra ve quan an gan nhat: {}", response.getName());
 
@@ -156,6 +160,22 @@ public class FoodStallController {
             ));
         } catch (Exception e) {
             log.error("Failed to generate audio on-demand for stallId={}, lang={}: {}", id, lang, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/audio/generate-all")
+    @Operation(summary = "On-demand: generate/regenerate audio for ALL supported languages for a specific food stall")
+    public ResponseEntity<?> generateAllAudioForStallOnDemand(@PathVariable Long id) {
+        log.info("On-demand ALL languages audio generate: stallId={}", id);
+        try {
+            localizationService.generateAllLanguagesForStall(id);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Phát dẫn đa ngôn ngữ đang được tạo ngầm cho stallId=" + id,
+                    "languages", List.of("en", "ja", "ko", "zh")
+            ));
+        } catch (Exception e) {
+            log.error("Failed to generate ALL audio on-demand for stallId={}: {}", id, e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
