@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.criteria.Predicate;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,14 +37,15 @@ public class FoodStallService {
 
     private final FoodStallRepository foodStallRepository;
     private final FoodStallLocalizationRepository localizationRepository;
+    private final LocalizationService localizationService;
     private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private static final String DEFAULT_LANG = "vi";
 
     @Transactional(readOnly = true)
     public Page<FoodStallResponse> searchStalls(String keyword, Integer minPrice, Integer maxPrice, Double minRating,
-            Pageable pageable) {
-        log.debug("Searching stalls with keyword={}, minPrice={}, maxPrice={}, minRating={}", keyword, minPrice,
-                maxPrice, minRating);
+            String lang, Pageable pageable) {
+        log.debug("Searching stalls with keyword={}, minPrice={}, maxPrice={}, minRating={}, lang={}", keyword, minPrice,
+                maxPrice, minRating, lang);
 
         Specification<FoodStall> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -56,12 +59,10 @@ public class FoodStallService {
             }
 
             if (minPrice != null) {
-                // Stall is relevant if its MAX price is at least the filter's MIN price
                 predicates.add(cb.greaterThanOrEqualTo(root.get("maxPrice"), minPrice));
             }
 
             if (maxPrice != null) {
-                // Stall is relevant if its MIN price is at most the filter's MAX price
                 predicates.add(cb.lessThanOrEqualTo(root.get("minPrice"), maxPrice));
             }
 
@@ -72,18 +73,49 @@ public class FoodStallService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        return foodStallRepository.findAll(spec, pageable)
-                .map(this::mapToResponse);
+        Page<FoodStall> stallPage = foodStallRepository.findAll(spec, pageable);
+        List<Long> stallIds = stallPage.getContent().stream().map(FoodStall::getId).toList();
+        
+        // Fetch localizations in bulk
+        Map<Long, FoodStallLocalization> locMap = fetchLocalizationMap(stallIds, lang);
+
+        return stallPage.map(stall -> mapToResponseWithLang(stall, locMap.get(stall.getId()), lang));
     }
 
     @Transactional(readOnly = true)
-    public List<FoodStallResponse> getAllStalls() {
-        log.debug("Lay danh sach tat ca quan an");
+    public List<FoodStallResponse> getAllStalls(String lang) {
+        log.debug("Lay danh sach tat ca quan an, lang={}", lang);
         List<FoodStall> stalls = foodStallRepository.findAll();
-        log.debug("Da lay duoc {} quan an", stalls.size());
+        List<Long> stallIds = stalls.stream().map(FoodStall::getId).toList();
+
+        // Fetch localizations in bulk
+        Map<Long, FoodStallLocalization> locMap = fetchLocalizationMap(stallIds, lang);
+
         return stalls.stream()
-                .map(this::mapToResponse)
+                .map(stall -> mapToResponseWithLang(stall, locMap.get(stall.getId()), lang))
                 .collect(Collectors.toList());
+    }
+
+    private Map<Long, FoodStallLocalization> fetchLocalizationMap(List<Long> stallIds, String lang) {
+        if (stallIds.isEmpty()) return Collections.emptyMap();
+        
+        List<FoodStallLocalization> locs = localizationRepository.findAllByLanguageCodeAndFoodStallIdIn(lang, stallIds);
+        
+        // Neu khong phai tieng Viet va bi thieu, fallback ve tieng Viet
+        if (!DEFAULT_LANG.equals(lang) && locs.size() < stallIds.size()) {
+            List<FoodStallLocalization> viLocs = localizationRepository.findAllByLanguageCodeAndFoodStallIdIn(DEFAULT_LANG, stallIds);
+            Map<Long, FoodStallLocalization> viMap = viLocs.stream()
+                .collect(Collectors.toMap(l -> l.getFoodStall().getId(), l -> l, (a, b) -> a));
+            
+            Map<Long, FoodStallLocalization> targetMap = locs.stream()
+                .collect(Collectors.toMap(l -> l.getFoodStall().getId(), l -> l, (a, b) -> a));
+            
+            // Merge: target ghi de vi
+            viMap.putAll(targetMap);
+            return viMap;
+        }
+
+        return locs.stream().collect(Collectors.toMap(l -> l.getFoodStall().getId(), l -> l, (a, b) -> a));
     }
 
     @Transactional(readOnly = true)
@@ -119,8 +151,8 @@ public class FoodStallService {
     }
 
     @Transactional(readOnly = true)
-    public FoodStallResponse findNearestStall(double latitude, double longitude) {
-        log.debug("Tim kiem quan an gan nhat tai toa do: lat={}, lon={}", latitude, longitude);
+    public FoodStallResponse findNearestStall(double latitude, double longitude, String lang) {
+        log.debug("Tim kiem quan an gan nhat tai toa do: lat={}, lon={}, lang={}", latitude, longitude, lang);
 
         FoodStall stall = foodStallRepository.findNearestStall(latitude, longitude)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -128,7 +160,7 @@ public class FoodStallService {
 
         log.debug("Tim thay quan an gan nhat: {}", stall.getName());
 
-        return mapToResponse(stall);
+        return getStallByIdWithLang(stall.getId(), lang);
     }
 
     @Transactional(readOnly = true)
@@ -172,6 +204,9 @@ public class FoodStallService {
 
         FoodStall savedStall = foodStallRepository.save(stall);
         log.debug("Da tao quan an moi: {}", savedStall.getId());
+
+        // Tu dong sinh audio da ngon ngu (chay ngam)
+        localizationService.generateAllLanguagesForStall(savedStall.getId());
 
         return mapToResponse(savedStall);
     }
@@ -217,6 +252,9 @@ public class FoodStallService {
 
         FoodStall updatedStall = foodStallRepository.save(stall);
         log.debug("Updated food stall: {}", updatedStall.getName());
+
+        // Neu ten hoac mo ta thay doi (hoac gia su la vay), cap nhat lai audio da ngon ngu
+        localizationService.generateAllLanguagesForStall(updatedStall.getId());
 
         return mapToResponse(updatedStall);
     }
@@ -277,7 +315,9 @@ public class FoodStallService {
                     .rating(req.getRating())
                     .build();
 
-            foodStallRepository.save(stall);
+            FoodStall savedStall = foodStallRepository.save(stall);
+            // Tu dong sinh audio cho tung quan duoc import
+            localizationService.generateAllLanguagesForStall(savedStall.getId());
             count++;
         }
         log.info("Da import {} quan an moi", count);
