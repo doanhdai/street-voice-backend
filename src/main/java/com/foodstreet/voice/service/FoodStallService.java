@@ -373,6 +373,46 @@ public class FoodStallService {
                 .build();
     }
 
+    public org.springframework.core.io.Resource exportAudioPack(String lang) throws java.io.IOException {
+        String effectiveLang = (lang == null || lang.trim().isEmpty()) ? DEFAULT_LANG : lang;
+        return generateZipResource((d, name) -> name.endsWith("_" + effectiveLang + ".mp3"));
+    }
+
+    public org.springframework.core.io.Resource exportAllAudio() throws java.io.IOException {
+        return generateZipResource((d, name) -> name.endsWith(".mp3"));
+    }
+
+    private org.springframework.core.io.Resource generateZipResource(java.io.FilenameFilter filter) throws java.io.IOException {
+        java.io.File dir = new java.io.File("uploads/audio/");
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new ResourceNotFoundException("Audio directory not found.");
+        }
+
+        java.io.File[] files = dir.listFiles(filter);
+        if (files == null || files.length == 0) {
+            throw new ResourceNotFoundException("No audio files found for the requested pack.");
+        }
+
+        java.nio.file.Path tempZipFile = java.nio.file.Files.createTempFile("audio_pack_", ".zip");
+        
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(tempZipFile.toFile()))) {
+            for (java.io.File file : files) {
+                java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(file.getName());
+                zos.putNextEntry(zipEntry);
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
+                    byte[] buffer = new byte[1024 * 4];
+                    int len;
+                    while ((len = fis.read(buffer)) > 0) {
+                        zos.write(buffer, 0, len);
+                    }
+                }
+                zos.closeEntry();
+            }
+        }
+        
+        return new org.springframework.core.io.FileSystemResource(tempZipFile.toFile());
+    }
+
     private FoodStallResponse mapToResponse(FoodStall stall) {
         return mapToResponseWithLang(stall, null, DEFAULT_LANG);
     }

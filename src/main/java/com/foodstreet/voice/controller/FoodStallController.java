@@ -231,6 +231,45 @@ public class FoodStallController {
         return ResponseEntity.ok(foodStallService.getPackInfo(lang));
     }
 
+    @GetMapping("/audio/download-pack")
+    @Operation(summary = "Download a ZIP package containing all audio files for a specific language")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAudioPack(
+            @RequestParam(defaultValue = "vi") String lang) {
+        log.info("Received request to download audio pack for lang={}", lang);
+        try {
+            org.springframework.core.io.Resource zipResource = foodStallService.exportAudioPack(lang);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"audio_pack_" + lang + ".zip\"")
+                    .contentType(org.springframework.http.MediaType.valueOf("application/zip"))
+                    .body(zipResource);
+        } catch (com.foodstreet.voice.exception.ResourceNotFoundException e) {
+            log.warn("Audio pack not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (java.io.IOException e) {
+            log.error("Error creating audio pack ZIP", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/audio/download-all")
+    @Operation(summary = "Download a ZIP package containing all audio files across all languages")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllAudio() {
+        log.info("Received request to download all audio files");
+        try {
+            org.springframework.core.io.Resource zipResource = foodStallService.exportAllAudio();
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"street_voice_full_audio.zip\"")
+                    .contentType(org.springframework.http.MediaType.valueOf("application/zip"))
+                    .body(zipResource);
+        } catch (com.foodstreet.voice.exception.ResourceNotFoundException e) {
+            log.warn("Audio directory is empty: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (java.io.IOException e) {
+            log.error("Error creating total audio pack ZIP", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     private FoodStallResponse convertToResponse(FoodStall stall) {
         FoodStallResponse response = new FoodStallResponse();
 
