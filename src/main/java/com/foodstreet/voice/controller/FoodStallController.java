@@ -250,6 +250,25 @@ public class FoodStallController {
         }
     }
 
+    @GetMapping("/{id}/audio/download-all")
+    @Operation(summary = "Download a ZIP package containing all audio files across all languages for a specific stall")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadStallAudioPack(@PathVariable Long id) {
+        log.info("Received request to download all audio files for stallId={}", id);
+        try {
+            org.springframework.core.io.Resource zipResource = foodStallService.exportStallAudio(id);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stall_" + id + "_all_audio.zip\"")
+                    .contentType(org.springframework.http.MediaType.valueOf("application/zip"))
+                    .body(zipResource);
+        } catch (com.foodstreet.voice.exception.ResourceNotFoundException e) {
+            log.warn("No audio files found for stallId={}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (java.io.IOException e) {
+            log.error("Error creating stall audio pack ZIP", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/audio/download-all")
     @Operation(summary = "Download a ZIP package containing all audio files across all languages")
     public ResponseEntity<org.springframework.core.io.Resource> downloadAllAudio() {

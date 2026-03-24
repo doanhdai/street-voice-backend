@@ -397,6 +397,12 @@ public class FoodStallService {
         return generateZipResource((d, name) -> name.endsWith(".mp3"));
     }
 
+    public org.springframework.core.io.Resource exportStallAudio(Long id) throws java.io.IOException {
+        log.debug("Exporting all audio for stallId={}", id);
+        String prefix = id + "_";
+        return generateZipResource((d, name) -> name.startsWith(prefix) && name.endsWith(".mp3"));
+    }
+
     private org.springframework.core.io.Resource generateZipResource(java.io.FilenameFilter filter) throws java.io.IOException {
         java.io.File dir = new java.io.File("uploads/audio/");
         if (!dir.exists() || !dir.isDirectory()) {
