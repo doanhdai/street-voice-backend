@@ -16,7 +16,7 @@ public class AudioProperties {
     public String getLocalPath() { return localPath; }
 
     // Helper: build URL từ tên file
-    // buildAudioUrl("oc_oanh.mp3") → "http://192.168.1.5:8080/audio/oc_oanh.mp3"
+    // buildAudioUrl("8_vi.mp3") → "http://192.168.1.5:8080/audio/oc_oanh.mp3"
     public String buildAudioUrl(String filename) {
         if (filename == null || filename.isEmpty()) {
             return "";
