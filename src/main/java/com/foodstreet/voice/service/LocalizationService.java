@@ -85,7 +85,7 @@ public class LocalizationService {
         String audioText = translatedName + ". " + translatedDesc;
         log.info("[Localization] Tao audio lang={}, do dai text={} chars", targetLang, audioText.length());
         @SuppressWarnings("null")
-        String audioUrl = audioService.getOrCreateAudio(audioText, targetLang);
+        String audioUrl = audioService.getOrCreateAudioForStall(stallId, audioText, targetLang);
 
         // 4. Luu hoac cap nhat localization
         FoodStallLocalization localization = localizationRepository

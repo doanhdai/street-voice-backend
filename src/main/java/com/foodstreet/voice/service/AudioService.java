@@ -43,46 +43,47 @@ public class AudioService {
     private final ConcurrentHashMap<String, CompletableFuture<String>> inProgressTasks = new ConcurrentHashMap<>();
 
     private String getUploadDir() {
-        String path = audioProperties.getLocalPath();
-        if (!path.endsWith("/")) {
-            path += "/";
-        }
-        return path;
+        return audioProperties.getResolvedLocalPath();
     }
 
-    @SuppressWarnings("null")
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
+        String hash = DigestUtils.md5DigestAsHex(text.getBytes());
+        String fileName = hash + "_" + languageCode + ".mp3";
+        return getOrCreateAudioInternal(fileName, text, languageCode);
+    }
+
+    public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
+        String fileName = stallId + "_" + languageCode + ".mp3";
+        return getOrCreateAudioInternal(fileName, text, languageCode);
+    }
+
+    private String getOrCreateAudioInternal(String fileName, String text, String languageCode) {
         try {
             Files.createDirectories(Paths.get(getUploadDir()));
-            // Dung MD5 hash de tinh ten file (khong bi collision nhu hashCode)
-            String hash = DigestUtils.md5DigestAsHex(text.getBytes());
-            String fileName = hash + "_" + languageCode + ".mp3";
             Path filePath = Paths.get(getUploadDir() + fileName);
 
             if (Files.exists(filePath)) {
                 return "/audio/" + fileName;
             }
 
-            // Use explicit cache key pattern to strictly differentiate by text hash and language
-            String cacheKey = hash + "_" + languageCode;
-            return inProgressTasks.computeIfAbsent(cacheKey, key -> generateAudioAsync(fileName, text, languageCode, filePath)).join();
+            return inProgressTasks.computeIfAbsent(fileName, key -> generateAudioAsync(fileName, text, languageCode, filePath)).join();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private CompletableFuture<String> generateAudioAsync(String cacheKey, String text, String languageCode, Path filePath) {
+    private CompletableFuture<String> generateAudioAsync(String fileName, String text, String languageCode, Path filePath) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 byte[] audioData = audioProvider.generateAudio(text, languageCode);
                 FileCopyUtils.copy(audioData, filePath.toFile());
-                return "/audio/" + cacheKey;
+                return "/audio/" + fileName;
             } catch (Exception e) {
                 throw new RuntimeException("Error generating audio", e);
             }
         }).whenComplete((result, ex) -> {
-            inProgressTasks.remove(cacheKey);
+            inProgressTasks.remove(fileName);
         });
     }
 
@@ -111,15 +112,15 @@ public class AudioService {
         FoodStall stall = foodStallRepository.findById(stallId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quan an khong ton tai: " + stallId));
 
-        // Xoa file cu neu co
+        // Xoa file cu neu co (file theo format moi se bi overwrite nen xoa file hash cu la chinh)
         if (stall.getAudioUrl() != null && !stall.getAudioUrl().isEmpty()) {
             String oldFileName = stall.getAudioUrl().replace("/audio/", "");
             deleteAudioFile(oldFileName);
         }
 
-        // Tao audio moi tu description
+        // Tao audio moi tu description dung format stallId_lang.mp3
         String text = stall.getName() + ". " + stall.getDescription();
-        String newAudioUrl = getOrCreateAudio(text, "vi");
+        String newAudioUrl = getOrCreateAudioForStall(stallId, text, "vi");
 
         stall.setAudioUrl(newAudioUrl);
         foodStallRepository.save(stall);

@@ -2,6 +2,7 @@ package com.foodstreet.voice.service;
 
 import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
+import com.foodstreet.voice.dto.LocalizationResponse;
 import com.foodstreet.voice.dto.GeofenceStallResponse;
 import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
@@ -147,7 +148,21 @@ public class FoodStallService {
                     .orElse(null);
         }
 
-        return mapToResponseWithLang(stall, localization, effectiveLang);
+        FoodStallResponse response = mapToResponseWithLang(stall, localization, effectiveLang);
+
+        // Fetch all localizations to show in Admin UI
+        List<FoodStallLocalization> allLocs = localizationRepository.findAllByFoodStallId(id);
+        List<LocalizationResponse> locResponses = allLocs.stream()
+                .map(l -> LocalizationResponse.builder()
+                        .languageCode(l.getLanguageCode())
+                        .name(l.getName())
+                        .description(l.getDescription())
+                        .audioUrl(l.getAudioUrl())
+                        .build())
+                .collect(Collectors.toList());
+        response.setLocalizations(locResponses);
+
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -173,7 +188,7 @@ public class FoodStallService {
                 .id(p.getId())
                 .name(p.getName())
                 .description(p.getDescription())
-                .audioUrl(p.getId() + "_vi.mp3")
+                .audioUrl("/audio/" + p.getId() + "_vi.mp3")
                 .triggerRadius(p.getTriggerRadius())
                 .priority(p.getPriority())
                 .latitude(p.getLatitude())
@@ -382,6 +397,12 @@ public class FoodStallService {
         return generateZipResource((d, name) -> name.endsWith(".mp3"));
     }
 
+    public org.springframework.core.io.Resource exportStallAudio(Long id) throws java.io.IOException {
+        log.debug("Exporting all audio for stallId={}", id);
+        String prefix = id + "_";
+        return generateZipResource((d, name) -> name.startsWith(prefix) && name.endsWith(".mp3"));
+    }
+
     private org.springframework.core.io.Resource generateZipResource(java.io.FilenameFilter filter) throws java.io.IOException {
         java.io.File dir = new java.io.File("uploads/audio/");
         if (!dir.exists() || !dir.isDirectory()) {
@@ -422,7 +443,7 @@ public class FoodStallService {
         String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
                 : stall.getDescription();
         String langSuffix = (usedLang != null && !usedLang.isBlank()) ? usedLang : DEFAULT_LANG;
-        String audioUrl = stall.getId() + "_" + langSuffix + ".mp3";
+        String audioUrl = "/audio/" + stall.getId() + "_" + langSuffix + ".mp3";
 
         return FoodStallResponse.builder()
                 .id(stall.getId())

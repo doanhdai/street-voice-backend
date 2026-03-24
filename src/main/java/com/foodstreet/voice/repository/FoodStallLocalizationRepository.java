@@ -14,6 +14,6 @@ public interface FoodStallLocalizationRepository extends JpaRepository<FoodStall
     Optional<FoodStallLocalization> findByFoodStallIdAndLanguageCode(Long foodStallId, String languageCode);
 
     List<FoodStallLocalization> findAllByLanguageCodeAndFoodStallIdIn(String languageCode, Collection<Long> foodStallIds);
-
+    List<FoodStallLocalization> findAllByFoodStallId(Long foodStallId);
     boolean existsByFoodStallIdAndLanguageCode(Long foodStallId, String languageCode);
 }
