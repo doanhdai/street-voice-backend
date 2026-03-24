@@ -43,7 +43,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
         // Tim danh sach cac quan an ma nguoi dung dang dung trong vung ban kinh cua no
         // (Dynamic Radius)
         // Logic: Distance(User, Stall) <= Stall.triggerRadius
-        // MUST SORT by: priority DESC (first), then distance ASC (second).
+        // MUST SORT by: priority ASC (first), then distance ASC (second).
         @Query(value = """
             SELECT 
                 id, 
@@ -57,7 +57,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 ST_Distance(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography)) AS "distance"
             FROM food_stalls
             WHERE ST_DWithin(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radius)
-            ORDER BY priority DESC, distance ASC
+            ORDER BY priority ASC, distance ASC
             LIMIT 5
             """, nativeQuery = true)
         List<GeofenceMatchProjection> findGeofenceMatches(
