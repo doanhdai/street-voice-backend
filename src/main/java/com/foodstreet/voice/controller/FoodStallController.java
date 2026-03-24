@@ -210,11 +210,10 @@ public class FoodStallController {
         List<FoodStallResponse> response = stalls.stream().map(stall -> {
             FoodStallResponse res = convertToResponse(stall);
 
-            // Lazy gen
-            if (res.getAudioUrl() == null || res.getAudioUrl().isEmpty()) {
-                String audioUrl = audioService.getOrCreateAudio(
-                        "Xin chao day la " + stall.getName() + ". " + stall.getDescription(),
-                        "vi");
+            // Lazy generation check
+            if (res.getAudioUrl() == null || res.getAudioUrl().isEmpty() || res.getAudioUrl().equals("null")) {
+                String audioText = "Xin chào, đây là " + stall.getName() + ". " + stall.getDescription();
+                String audioUrl = audioService.getOrCreateAudioForStall(stall.getId(), audioText, "vi");
                 res.setAudioUrl(audioUrl);
             }
             return res;
