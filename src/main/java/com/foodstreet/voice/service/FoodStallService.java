@@ -2,6 +2,7 @@ package com.foodstreet.voice.service;
 
 import com.foodstreet.voice.dto.CreateFoodStallRequest;
 import com.foodstreet.voice.dto.FoodStallResponse;
+import com.foodstreet.voice.dto.LocalizationResponse;
 import com.foodstreet.voice.dto.GeofenceStallResponse;
 import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
@@ -147,7 +148,21 @@ public class FoodStallService {
                     .orElse(null);
         }
 
-        return mapToResponseWithLang(stall, localization, effectiveLang);
+        FoodStallResponse response = mapToResponseWithLang(stall, localization, effectiveLang);
+
+        // Fetch all localizations to show in Admin UI
+        List<FoodStallLocalization> allLocs = localizationRepository.findAllByFoodStallId(id);
+        List<LocalizationResponse> locResponses = allLocs.stream()
+                .map(l -> LocalizationResponse.builder()
+                        .languageCode(l.getLanguageCode())
+                        .name(l.getName())
+                        .description(l.getDescription())
+                        .audioUrl(l.getAudioUrl())
+                        .build())
+                .collect(Collectors.toList());
+        response.setLocalizations(locResponses);
+
+        return response;
     }
 
     @Transactional(readOnly = true)
