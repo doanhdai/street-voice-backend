@@ -173,7 +173,7 @@ public class FoodStallService {
                 .id(p.getId())
                 .name(p.getName())
                 .description(p.getDescription())
-                .audioUrl(p.getAudioUrl())
+                .audioUrl(p.getId() + "_vi.mp3")
                 .triggerRadius(p.getTriggerRadius())
                 .priority(p.getPriority())
                 .latitude(p.getLatitude())
@@ -421,7 +421,8 @@ public class FoodStallService {
         String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
         String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
                 : stall.getDescription();
-        String audioUrl = (loc != null && loc.getAudioUrl() != null) ? loc.getAudioUrl() : stall.getAudioUrl();
+        String langSuffix = (usedLang != null && !usedLang.isBlank()) ? usedLang : DEFAULT_LANG;
+        String audioUrl = stall.getId() + "_" + langSuffix + ".mp3";
 
         return FoodStallResponse.builder()
                 .id(stall.getId())
