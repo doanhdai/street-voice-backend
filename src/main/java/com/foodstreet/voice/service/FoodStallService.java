@@ -179,22 +179,40 @@ public class FoodStallService {
     }
 
     @Transactional(readOnly = true)
-    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius) {
-        log.debug("Get geofence matches lat={}, lng={}, radius={}", lat, lng, radius);
+    public List<GeofenceStallResponse> getGeofenceMatches(double lat, double lng, double radius, String lang) {
+        log.debug("Get geofence matches lat={}, lng={}, radius={}, lang={}", lat, lng, radius, lang);
         
         List<GeofenceMatchProjection> projections = foodStallRepository.findGeofenceMatches(lat, lng, radius);
+        List<Long> stallIds = projections.stream().map(GeofenceMatchProjection::getId).collect(Collectors.toList());
         
-        return projections.stream().map(p -> GeofenceStallResponse.builder()
+        Map<Long, FoodStallLocalization> locMap = fetchLocalizationMap(stallIds, lang);
+        
+        return projections.stream().map(p -> {
+            FoodStallLocalization loc = locMap.get(p.getId());
+            
+            String name = (loc != null && loc.getName() != null) ? loc.getName() : p.getName();
+            String description = (loc != null && loc.getDescription() != null) ? loc.getDescription() : p.getDescription();
+            
+            String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode() : DEFAULT_LANG;
+            String audioUrl = "/audio/" + p.getId() + "_" + actualLang + ".mp3";
+            
+            String localizationStatus = (lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
+                                        ? "FALLBACK_TO_VI" : null;
+
+            return GeofenceStallResponse.builder()
                 .id(p.getId())
-                .name(p.getName())
-                .description(p.getDescription())
-                .audioUrl("/audio/" + p.getId() + "_vi.mp3")
+                .name(name)
+                .description(description)
+                .audioUrl(audioUrl)
                 .triggerRadius(p.getTriggerRadius())
                 .priority(p.getPriority())
                 .latitude(p.getLatitude())
                 .longitude(p.getLongitude())
                 .distance(p.getDistance())
-                .build()).collect(Collectors.toList());
+                .usedLanguage(actualLang)
+                .localizationStatus(localizationStatus)
+                .build();
+        }).collect(Collectors.toList());
     }
 
     @Transactional

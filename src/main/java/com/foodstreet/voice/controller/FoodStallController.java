@@ -67,9 +67,10 @@ public class FoodStallController {
     public ResponseEntity<List<GeofenceStallResponse>> getGeofenceMatches(
             @io.swagger.v3.oas.annotations.Parameter(description = "Vĩ độ (Latitude) hiện tại của người dùng", example = "10.762622") @RequestParam double lat,
             @io.swagger.v3.oas.annotations.Parameter(description = "Kinh độ (Longitude) hiện tại của người dùng", example = "106.700174") @RequestParam double lng,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Bán kính quét để lọc quán (mặc định 50 mét)", example = "50.0") @RequestParam(defaultValue = "50.0") double radius) {
-        log.info("Received request for geofence matches: lat={}, lng={}, radius={}", lat, lng, radius);
-        List<GeofenceStallResponse> results = foodStallService.getGeofenceMatches(lat, lng, radius);
+            @io.swagger.v3.oas.annotations.Parameter(description = "Bán kính quét để lọc quán (mặc định 50 mét)", example = "50.0") @RequestParam(defaultValue = "50.0") double radius,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Ngôn ngữ yêu cầu (mặc định vi)", example = "vi") @RequestParam(defaultValue = "vi") String lang) {
+        log.info("Received request for geofence matches: lat={}, lng={}, radius={}, lang={}", lat, lng, radius, lang);
+        List<GeofenceStallResponse> results = foodStallService.getGeofenceMatches(lat, lng, radius, lang);
         return ResponseEntity.ok(results);
     }
 

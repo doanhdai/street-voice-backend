@@ -37,4 +37,10 @@ public class GeofenceStallResponse {
     
     @Schema(description = "Độ ưu tiên của quán (Càng cao xếp càng trên)", example = "10")
     private Integer priority;
+
+    @Schema(description = "Ngôn ngữ thực tế được sử dụng để trả về Name/Description", example = "en")
+    private String usedLanguage;
+
+    @Schema(description = "Trạng thái dịch thuật (null nếu khớp ngôn ngữ, 'FALLBACK_TO_VI' nếu phải dùng tiếng Việt thay thế)", example = "FALLBACK_TO_VI")
+    private String localizationStatus;
 }
