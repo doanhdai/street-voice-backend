@@ -48,7 +48,7 @@ public class AnalyticsController {
         }
 
         @GetMapping("/poi-ranking")
-        @Operation(summary = "Rank POIs by visits and audio plays", description = "Xếp hạng các quán ăn (POI) theo số lượt vào vùng (`ENTER_REGION`) và lượt nghe audio (`PLAY_AUDIO`) trong khoảng thời gian `[from, to]`. Kèm theo tỉ lệ engagement = plays/visits.")
+        @Operation(summary = "Rank POIs by play-audio count", description = "Xếp hạng các quán ăn (POI) theo tổng số lượt phát audio (`PLAY_AUDIO`, `PLAY_AUDIO_MANUAL`, `PLAY_AUDIO_AUTO`) trong khoảng thời gian `[from, to]`.")
         public ResponseEntity<?> getPoiRanking(
                         @Parameter(description = "Start date (inclusive), format yyyy-MM-dd", example = "2026-03-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                         @Parameter(description = "End date (inclusive), format yyyy-MM-dd", example = "2026-03-23") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -85,7 +85,7 @@ public class AnalyticsController {
         }
 
         @GetMapping("/audio-engagement")
-        @Operation(summary = "Audio engagement rate by POI", description = "Tỉ lệ nghe audio = `PLAY_AUDIO / ENTER_REGION` theo từng quán. Chỉ số này cho thấy quán nào có audio hấp dẫn người nghe nhất. Lọc theo `stallId` nếu chỉ muốn xem 1 quán.")
+        @Operation(summary = "Audio plays by POI", description = "Thống kê tổng số lượt phát audio (`PLAY_AUDIO`, `PLAY_AUDIO_MANUAL`, `PLAY_AUDIO_AUTO`) theo từng quán. Lọc theo `stallId` nếu chỉ muốn xem 1 quán.")
         public ResponseEntity<?> getAudioEngagement(
                         @Parameter(description = "Optional stall id to filter a single POI", example = "1") @RequestParam(required = false) Long stallId) {
 

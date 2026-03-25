@@ -52,17 +52,13 @@ public class AnalyticsService {
 
         int rank = 1;
         for (PoiRankingProjection row : rows) {
-            long visits = row.getVisits() != null ? row.getVisits() : 0L;
             long plays = row.getPlays() != null ? row.getPlays() : 0L;
-            double engagementRate = visits == 0 ? 0.0 : Math.round(((double) plays / visits) * 10000.0) / 10000.0;
 
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("rank", rank++);
             item.put("stallId", row.getStallId());
             item.put("stallName", row.getStallName());
-            item.put("visits", visits);
             item.put("plays", plays);
-            item.put("engagementRate", engagementRate);
             response.add(item);
         }
 
@@ -97,11 +93,7 @@ public class AnalyticsService {
             item.put("rank", rank++);
             item.put("stallId", row.getStallId());
             item.put("stallName", row.getStallName());
-            item.put("enters", row.getEnters() != null ? row.getEnters() : 0L);
             item.put("plays", row.getPlays() != null ? row.getPlays() : 0L);
-
-            BigDecimal engagementRate = row.getEngagementRate() != null ? row.getEngagementRate() : BigDecimal.ZERO;
-            item.put("engagementRate", engagementRate);
             response.add(item);
         }
 

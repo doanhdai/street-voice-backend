@@ -8,6 +8,7 @@ import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.entity.FoodStallLocalization;
+import com.foodstreet.voice.entity.StallStatus;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.repository.FoodStallRepository;
@@ -51,6 +52,11 @@ public class FoodStallService {
         Specification<FoodStall> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            predicates.add(cb.or(
+                    cb.equal(root.get("status"), StallStatus.ACTIVE),
+                    cb.isNull(root.get("status"))
+            ));
+
             if (keyword != null && !keyword.isEmpty()) {
                 String likeKeyword = "%" + keyword.toLowerCase() + "%";
                 predicates.add(cb.or(
@@ -86,7 +92,9 @@ public class FoodStallService {
     @Transactional(readOnly = true)
     public List<FoodStallResponse> getAllStalls(String lang) {
         log.debug("Lay danh sach tat ca quan an, lang={}", lang);
-        List<FoodStall> stalls = foodStallRepository.findAll();
+        List<FoodStall> stalls = foodStallRepository.findAll().stream()
+            .filter(stall -> stall.getStatus() == null || stall.getStatus() == StallStatus.ACTIVE)
+            .toList();
         List<Long> stallIds = stalls.stream().map(FoodStall::getId).toList();
 
         // Fetch localizations in bulk
@@ -493,6 +501,7 @@ public class FoodStallService {
                 .rating(stall.getRating())
                 .usedLanguage(actualLang)
                 .localizationStatus(localizationStatus)
+                .status(stall.getStatus() == null ? null : stall.getStatus().name())
                 .build();
     }
 }

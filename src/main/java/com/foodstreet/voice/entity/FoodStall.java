@@ -66,11 +66,28 @@ public class FoodStall {
     @Column(name = "rating")
     private Double rating;
 
+    @Column(name = "owner_id")
+    private Long ownerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 30)
+    @Builder.Default
+    private StallStatus status = StallStatus.ACTIVE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

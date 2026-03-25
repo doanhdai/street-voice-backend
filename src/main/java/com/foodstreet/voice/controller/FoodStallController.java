@@ -347,6 +347,7 @@ public class FoodStallController {
         response.setMaxPrice(stall.getMaxPrice());
         response.setAudioDuration(stall.getAudioDuration());
         response.setFeaturedReviews(stall.getFeaturedReviews());
+        response.setStatus(stall.getStatus() == null ? null : stall.getStatus().name());
 
         // QUAN TRỌNG: Chuyển đổi tọa độ từ PostGIS (Point) sang Lat/Lng
         // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry

@@ -3,6 +3,7 @@ package com.foodstreet.voice.auth.service;
 import com.foodstreet.voice.auth.config.AuthProperties;
 import com.foodstreet.voice.auth.dto.LoginRequest;
 import com.foodstreet.voice.auth.dto.RegisterRequest;
+import com.foodstreet.voice.auth.dto.StallOwnerRegistrationRequest;
 import com.foodstreet.voice.auth.dto.TokenResponse;
 import com.foodstreet.voice.auth.dto.UserSummary;
 import com.foodstreet.voice.auth.entity.User;
@@ -85,6 +86,31 @@ public class AuthService {
                 .build();
 
         User saved = userRepository.save(newUser);
+        return issueTokens(saved);
+    }
+
+    @Transactional
+    public TokenResponse registerStallOwner(StallOwnerRegistrationRequest request) {
+        String username = normalizeUsername(request.getUsername());
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        if (userRepository.existsByUsername(username)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+        }
+
+        User owner = User.builder()
+                .username(username)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(UserRole.RESTAURANT_OWNER)
+                .enabled(true)
+                .build();
+
+        User saved = userRepository.save(owner);
         return issueTokens(saved);
     }
 

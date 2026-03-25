@@ -2,6 +2,7 @@ package com.foodstreet.voice.repository;
 
 import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.entity.FoodStall;
+import com.foodstreet.voice.entity.StallStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +18,8 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
         // ST_DWithin: hoạt động như một bộ lọc chỉ quét những điểm nằm trong vùng index
         // => rat tot khi dữ liệu lớn
         @Query(value = "SELECT * FROM food_stalls f " +
-                        "WHERE ST_DWithin(CAST(f.location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radiusInMeters)", nativeQuery = true)
+                        "WHERE (f.status IS NULL OR f.status = 'ACTIVE') " +
+                        "AND ST_DWithin(CAST(f.location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radiusInMeters)", nativeQuery = true)
         List<FoodStall> findStallsWithinRadius(@Param("latitude") double latitude,
                         @Param("longitude") double longitude,
                         @Param("radiusInMeters") double radiusInMeters);
@@ -28,6 +30,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
         // van giữ lại nếu cần check khoảng cách chính xác 1 điểm
         @Query(value = """
                         SELECT * FROM food_stalls
+                        WHERE (status IS NULL OR status = 'ACTIVE')
                         ORDER BY ST_Distance(
                             location,
                             ST_GeogFromText('POINT(' || :longitude || ' ' || :latitude || ')')
@@ -58,6 +61,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 ST_Distance(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography)) AS "distance"
             FROM food_stalls
             WHERE ST_DWithin(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radius)
+                            AND (status IS NULL OR status = 'ACTIVE')
             ORDER BY priority ASC, distance ASC
             LIMIT 5
             """, nativeQuery = true)
@@ -68,4 +72,8 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
 
         @Query("SELECT MAX(f.createdAt) FROM FoodStall f")
         Optional<java.time.LocalDateTime> findMaxCreatedAt();
-}
+
+        Optional<FoodStall> findByIdAndOwnerId(Long id, Long ownerId);
+
+        List<FoodStall> findByStatus(StallStatus status);
+}

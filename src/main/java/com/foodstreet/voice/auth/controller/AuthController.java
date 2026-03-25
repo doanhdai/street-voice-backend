@@ -3,6 +3,7 @@ package com.foodstreet.voice.auth.controller;
 import com.foodstreet.voice.auth.dto.LoginRequest;
 import com.foodstreet.voice.auth.dto.RefreshTokenRequest;
 import com.foodstreet.voice.auth.dto.RegisterRequest;
+import com.foodstreet.voice.auth.dto.StallOwnerRegistrationRequest;
 import com.foodstreet.voice.auth.dto.TokenResponse;
 import com.foodstreet.voice.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,6 +59,16 @@ public class AuthController {
     })
     public ResponseEntity<TokenResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.registerInitialAdmin(request));
+    }
+
+    @PostMapping("/register-owner")
+    @Operation(summary = "Register a new stall owner account")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Owner account registered"),
+            @ApiResponse(responseCode = "409", description = "Username or email already exists")
+    })
+    public ResponseEntity<TokenResponse> registerOwner(@Valid @RequestBody StallOwnerRegistrationRequest request) {
+        return ResponseEntity.ok(authService.registerStallOwner(request));
     }
 
     @PostMapping("/refresh")
