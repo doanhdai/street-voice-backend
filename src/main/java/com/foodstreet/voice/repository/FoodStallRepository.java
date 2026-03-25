@@ -49,6 +49,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 id, 
                 name, 
                 description, 
+                address,
                 CAST(id AS varchar) || '_vi.mp3' as "audioUrl", 
                 trigger_radius as "triggerRadius", 
                 priority,

@@ -41,26 +41,31 @@ public class LocalizationService {
 
         String sourceName = savedStall.getName();
         String sourceDesc = savedStall.getDescription();
+        String sourceAddress = savedStall.getAddress();
 
         for (String lang : languages) {
             try {
                 String translatedName;
                 String translatedDesc;
+                String translatedAddress;
 
                 // Translation Phase
                 if (lang.equals("vi")) {
                     translatedName = sourceName;
                     translatedDesc = sourceDesc;
+                    translatedAddress = sourceAddress;
                     log.debug("[Localization] [vi] Su dung text goc, stallId={}", stallId);
                 } else {
-                    log.info("[Localization] [{}] Dich name + description, stallId={}", lang, stallId);
+                    log.info("[Localization] [{}] Dich name + description + address, stallId={}", lang, stallId);
                     translatedName = translationService.translate(sourceName, lang);
                     translatedDesc = translationService.translate(sourceDesc, lang);
+                    translatedAddress = translationService.translate(sourceAddress, lang);
                 }
 
                 // Effectively-final aliases required for use inside lambda
                 final String finalName = translatedName;
                 final String finalDesc = translatedDesc;
+                final String finalAddress = translatedAddress;
 
                 // Audio Generation Phase
                 String audioText = finalName + ". " + finalDesc;
@@ -77,6 +82,7 @@ public class LocalizationService {
                         .map(existing -> {
                             existing.setName(finalName);
                             existing.setDescription(finalDesc);
+                            existing.setAddress(finalAddress);
                             existing.setAudioUrl(finalAudioUrl);
                             return existing;
                         })
@@ -85,6 +91,7 @@ public class LocalizationService {
                                 .languageCode(lang)
                                 .name(finalName)
                                 .description(finalDesc)
+                                .address(finalAddress)
                                 .audioUrl(finalAudioUrl)
                                 .build());
                 localizationRepository.save(stallRef);
@@ -199,14 +206,17 @@ public class LocalizationService {
         // 2. Dich sang ngon ngu dich
         String translatedName;
         String translatedDesc;
+        String translatedAddress;
 
         if ("vi".equalsIgnoreCase(targetLang)) {
             translatedName = sourceName;
             translatedDesc = sourceDesc;
+            translatedAddress = stall.getAddress();
         } else {
-            log.info("[Localization] Dich name + description sang {}", targetLang);
+            log.info("[Localization] Dich name + description + address sang {}", targetLang);
             translatedName = translationService.translate(sourceName, targetLang);
             translatedDesc = translationService.translate(sourceDesc, targetLang);
+            translatedAddress = translationService.translate(stall.getAddress(), targetLang);
         }
 
         // 3. Tao audio MP3
@@ -225,6 +235,7 @@ public class LocalizationService {
 
         localization.setName(translatedName);
         localization.setDescription(translatedDesc);
+        localization.setAddress(translatedAddress);
         localization.setAudioUrl(audioUrl);
 
         localizationRepository.save(localization);

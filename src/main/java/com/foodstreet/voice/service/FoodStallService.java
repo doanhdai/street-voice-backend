@@ -192,6 +192,7 @@ public class FoodStallService {
             
             String name = (loc != null && loc.getName() != null) ? loc.getName() : p.getName();
             String description = (loc != null && loc.getDescription() != null) ? loc.getDescription() : p.getDescription();
+            String address = (loc != null && loc.getAddress() != null) ? loc.getAddress() : p.getAddress();
             
             String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode() : DEFAULT_LANG;
             String audioUrl = "/audio/" + p.getId() + "_" + actualLang + ".mp3";
@@ -203,6 +204,7 @@ public class FoodStallService {
                 .id(p.getId())
                 .name(name)
                 .description(description)
+                .address(address)
                 .audioUrl(audioUrl)
                 .triggerRadius(p.getTriggerRadius())
                 .priority(p.getPriority())
@@ -460,6 +462,7 @@ public class FoodStallService {
         String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
         String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
                 : stall.getDescription();
+        String address = (loc != null && loc.getAddress() != null) ? loc.getAddress() : stall.getAddress();
 
         // Tinh toan ngon ngu thuc te duoc su dung
         String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode()
@@ -476,7 +479,7 @@ public class FoodStallService {
         return FoodStallResponse.builder()
                 .id(stall.getId())
                 .name(name)
-                .address(stall.getAddress())
+                .address(address)
                 .description(description)
                 .audioUrl(audioUrl)
                 .imageUrl(stall.getImageUrl())

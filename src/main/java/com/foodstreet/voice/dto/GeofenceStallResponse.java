@@ -20,6 +20,9 @@ public class GeofenceStallResponse {
     @Schema(description = "Mô tả của quán (Dùng để generate Audio Text)", example = "Quán Ốc Oanh là một trong những quán ốc...")
     private String description;
     
+    @Schema(description = "Địa chỉ của quán", example = "12 Vĩnh Khánh, Quận 4, TP.HCM")
+    private String address;
+    
     @Schema(description = "Vĩ độ của quán", example = "10.762622")
     private Double latitude;
     
