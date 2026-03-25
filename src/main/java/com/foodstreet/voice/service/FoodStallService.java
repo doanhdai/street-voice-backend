@@ -220,8 +220,8 @@ public class FoodStallService {
         FoodStall savedStall = foodStallRepository.save(stall);
         log.debug("Da tao quan an moi: {}", savedStall.getId());
 
-        // Tu dong sinh audio da ngon ngu (chay ngam)
-        localizationService.generateAllLanguagesForStall(savedStall.getId());
+        // Translate-on-Create: dich, tao audio, luu localization cho ca 5 ngon ngu (chay ngam)
+        localizationService.processLocalizationAndAudioInBackground(savedStall);
 
         return mapToResponse(savedStall);
     }
@@ -438,12 +438,22 @@ public class FoodStallService {
         return mapToResponseWithLang(stall, null, DEFAULT_LANG);
     }
 
-    private FoodStallResponse mapToResponseWithLang(FoodStall stall, FoodStallLocalization loc, String usedLang) {
+    private FoodStallResponse mapToResponseWithLang(FoodStall stall, FoodStallLocalization loc, String requestedLang) {
         String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
         String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
                 : stall.getDescription();
-        String langSuffix = (usedLang != null && !usedLang.isBlank()) ? usedLang : DEFAULT_LANG;
+
+        // Tinh toan ngon ngu thuc te duoc su dung
+        String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode()
+                : DEFAULT_LANG;
+        String langSuffix = (actualLang != null && !actualLang.isBlank()) ? actualLang : DEFAULT_LANG;
         String audioUrl = "/audio/" + stall.getId() + "_" + langSuffix + ".mp3";
+
+        // Neu ngon ngu thuc te khac ngon ngu yeu cau => da fallback ve tieng Viet
+        String localizationStatus = null;
+        if (requestedLang != null && !requestedLang.equals(DEFAULT_LANG) && !requestedLang.equals(actualLang)) {
+            localizationStatus = "FALLBACK_TO_VI";
+        }
 
         return FoodStallResponse.builder()
                 .id(stall.getId())
@@ -460,7 +470,8 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
-                .usedLanguage(usedLang)
+                .usedLanguage(actualLang)
+                .localizationStatus(localizationStatus)
                 .build();
     }
 }

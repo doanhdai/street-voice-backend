@@ -32,14 +32,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-@Tag(name = "Public - Food Stalls", description = "APIs for Mobile App to fetch locations and audio data")
+@Tag(name = "Public - Food Stalls", description = "APIs chính dành cho Mobile App để lấy danh sách quán ăn, audio, địa lý và đồng bộ dữ liệu offline. Hỗ trợ đa ngôn ngữ (vi/en/ja/ko/zh) thông qua tham số `lang`.")
 public class FoodStallController {
 
     private final FoodStallService foodStallService;
     private final LocalizationService localizationService;
 
     @GetMapping("/search")
-    @Operation(summary = "Search and filter food stalls with pagination")
+    @Operation(
+        summary = "Search and filter food stalls with pagination",
+        description = "Tìm kiếm quán ăn theo từ khóa, lọc theo khoảng giá và rating. Kết quả được phân trang. " +
+            "Hỗ trợ `lang` để trả về tên và mô tả theo ngôn ngữ yêu cầu, với fallback về tiếng Việt nếu chưa có bản dịch."
+    )
     public ResponseEntity<Page<FoodStallResponse>> searchStalls(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer minPrice,
@@ -55,8 +59,11 @@ public class FoodStallController {
     }
 
     @GetMapping("/geofence")
-    @Operation(summary = "Get food stalls within geofence radius, ordered by priority and distance",
-               description = "API dành cho Mobile App (Flutter) để quét danh sách các quán ăn xung quanh vị trí hiện tại của người dùng. Trả về tối đa 5 quán, ưu tiên quán có priority cao trước, sau đó mới xét đến khoảng cách.")
+    @Operation(
+        summary = "Get food stalls within geofence radius",
+        description = "API dành cho Mobile App (Flutter) để quét các quán ăn gần vị trí hiện tại. " +
+            "Trả về tối đa **5 quán**, ưu tiên quán có `priority` cao trước, sau đó mới xờ khoảng cách. Dùng để kích hoạt thông báo âm thanh khi người dùng tiếp cận quán."
+    )
     public ResponseEntity<List<GeofenceStallResponse>> getGeofenceMatches(
             @io.swagger.v3.oas.annotations.Parameter(description = "Vĩ độ (Latitude) hiện tại của người dùng", example = "10.762622") @RequestParam double lat,
             @io.swagger.v3.oas.annotations.Parameter(description = "Kinh độ (Longitude) hiện tại của người dùng", example = "106.700174") @RequestParam double lng,
@@ -67,7 +74,12 @@ public class FoodStallController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all food stalls")
+    @Operation(
+        summary = "Get all food stalls with multi-language support",
+        description = "Trả về danh sách tất cả quán ăn theo ngôn ngữ yêu cầu (lang). " +
+            "Nếu quán chưa có bản dịch, hệ thống fallback về tiếng Việt và set `localizationStatus = 'FALLBACK_TO_VI'`.\n\n" +
+            "Ngôn ngữ hỗ trợ: vi (default), en, ja, ko, zh."
+    )
     public ResponseEntity<List<FoodStallResponse>> getAllStalls(@RequestParam(defaultValue = "vi") String lang) {
         log.info("Da nhan request de lay tat ca cac quan an, lang={}", lang);
         List<FoodStallResponse> stalls = foodStallService.getAllStalls(lang);
@@ -76,7 +88,11 @@ public class FoodStallController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get a food stall by ID with optional language (fallback to vi)")
+    @Operation(
+        summary = "Get a food stall by ID",
+        description = "Lấy thông tin chi tiết của một quán ăn theo `id`. Kèm theo danh sách `localizations` (tất cả ngôn ngữ hiện có). " +
+            "Nếu ngôn ngữ yêu cầu (`lang`) chưa có, fallback về tiếng Việt. Field `usedLanguage` cho biết ngôn ngữ được sử dụng thực tế."
+    )
     public ResponseEntity<FoodStallResponse> getStallById(
             @PathVariable Long id,
             @RequestParam(defaultValue = "vi") String lang) {
@@ -86,7 +102,10 @@ public class FoodStallController {
     }
 
     @GetMapping("/{id}/audio")
-    @Operation(summary = "Get audio URL for a specific food stall")
+    @Operation(
+        summary = "Get audio URL for a specific food stall",
+        description = "Lấy thông tin audio (URL + thời lượng) của quán ăn. Nếu quán chưa có audio, trả về message hướng dẫn gọi sync. Mặc định là audio tiếng Việt."
+    )
     public ResponseEntity<?> getAudioByStallId(@PathVariable Long id) {
         log.info("Nhan request lay audio cho quan an id: {}", id);
         FoodStallResponse stall = foodStallService.getStallById(id);
@@ -109,7 +128,10 @@ public class FoodStallController {
 
 
     @GetMapping("/nearby")
-    @Operation(summary = "Find the nearest food stall")
+    @Operation(
+        summary = "Find the nearest food stall",
+        description = "Tìm quán ăn gần nhất so với toạ độ `lat/lon` của người dùng. Hỗ trợ tham số `lang` để trả về nội dung theo ngôn ngữ."
+    )
     public ResponseEntity<FoodStallResponse> findNearestStall(
             @Valid @ModelAttribute NearbyRequest request,
             @RequestParam(defaultValue = "vi") String lang) {
@@ -126,7 +148,13 @@ public class FoodStallController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new food stall")
+    @Operation(
+        summary = "Create a new food stall",
+        description = "Tạo quán ăn mới và kích hoạt **Translate-on-Create** bất đồng bộ.\n\n" +
+            "API trả về `201 Created` ngay lập tức sau khi lưu DB. " +
+            "Tiến trình ngầm sẽ tự động dịch tên + mô tả sang en/ja/ko/zh và tạo TTS audio cho cả 5 ngôn ngữ. " +
+            "Kết quả xuất hiện trong `food_stall_localizations` sau khoảng 10-30 giây."
+    )
     public ResponseEntity<FoodStallResponse> createStall(@Valid @RequestBody CreateFoodStallRequest request) {
         log.info("Da nhan request de tao quan an moi: {}", request.getName());
         FoodStallResponse stall = foodStallService.createStall(request);
@@ -135,7 +163,10 @@ public class FoodStallController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update an existing food stall")
+    @Operation(
+        summary = "Update an existing food stall",
+        description = "Cập nhật thông tin quán ăn (tên, mô tả, tọa độ...). Sau khi cập nhật, gọi `POST /{id}/audio/generate-all` để tái tạo audio theo nội dung mới."
+    )
     public ResponseEntity<FoodStallResponse> updateStall(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFoodStallRequest request) {
@@ -146,7 +177,10 @@ public class FoodStallController {
     }
 
     @PostMapping("/{id}/audio/generate")
-    @Operation(summary = "On-demand: generate/regenerate audio for a food stall in a specific language")
+    @Operation(
+        summary = "On-demand: generate audio for one language",
+        description = "Tạo hoặc tái tạo file TTS cho quán ăn theo `stallId` và một ngôn ngữ cụ thể. Kết quả lưu vào `uploads/audio/{stallId}_{lang}.mp3` và trả về URL. Dùng để sửa lã một ngôn ngữ cụ thể mà không cần re-generate toàn bộ."
+    )
     public ResponseEntity<?> generateAudioOnDemand(
             @PathVariable Long id,
             @RequestParam(defaultValue = "vi") String lang) {
@@ -165,7 +199,10 @@ public class FoodStallController {
     }
 
     @PostMapping("/{id}/audio/generate-all")
-    @Operation(summary = "On-demand: generate/regenerate audio for ALL supported languages for a specific food stall")
+    @Operation(
+        summary = "On-demand: generate audio for ALL 5 languages",
+        description = "Kích hoạt bất đồng bộ (@Async) để tạo hoặc tái tạo file TTS cho **cả 5 ngôn ngữ** (vi/en/ja/ko/zh) của quán ăn. API trả về ngay lập tức, audio được tạo trong background. Dùng sau khi cập nhật nội dung quán."
+    )
     public ResponseEntity<?> generateAllAudioForStallOnDemand(@PathVariable Long id) {
         log.info("On-demand ALL languages audio generate: stallId={}", id);
         try {
@@ -181,7 +218,10 @@ public class FoodStallController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a food stall")
+    @Operation(
+        summary = "Delete a food stall",
+        description = "Xóa một quán ăn theo `id`. Lưu ý: các bẳn ghi trong `food_stall_localizations` và file audio liên quan cần dọn dẹp thủ công qua `GET /api/v1/admin/audio/orphaned` sau đó."
+    )
     public ResponseEntity<Void> deleteStall(@PathVariable Long id) {
         log.info("Da nhan request de xoa quan an co id: {}", id);
         foodStallService.deleteStall(id);
