@@ -160,6 +160,8 @@ public class AnalyticsService {
 
             UserActivity activity = UserActivity.builder()
                     .deviceId(request.getDeviceId())
+                    .sessionId(request.getSessionId())
+                    .platform(request.getPlatform())
                     .foodStall(stall)
                     .actionType(request.getAction())
                     .eventTime(LocalDateTime.now())
@@ -177,22 +179,26 @@ public class AnalyticsService {
     @Async // Run in background to avoid blocking API response
     @Transactional
     public void trackEventsBatch(java.util.List<DeviceActivityBatchRequest> requests) {
-        log.debug("Tracking batch of {} device activity aggregations", requests.size());
-
+        log.info("Processing batch of {} device activity requests in background", requests.size());
         try {
             java.util.List<UserActivity> activities = new java.util.ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
 
             for (DeviceActivityBatchRequest deviceReq : requests) {
                 String deviceId = deviceReq.getDeviceId();
+                String sessionId = deviceReq.getSessionId();
+                String platform = deviceReq.getPlatform();
                 if (deviceReq.getStalls() == null) continue;
 
                 for (StallActivityCount stallReq : deviceReq.getStalls()) {
+                    log.info("Processing stall {}: manual={}, auto={}, skip={}, finish={}", 
+                            stallReq.getStallId(), stallReq.getManualPlay(), stallReq.getAutoPlay(), stallReq.getSkip(), stallReq.getFinish());
                     FoodStall stall = foodStallRepository.getReferenceById(stallReq.getStallId());
 
-                    unrollAction(activities, deviceId, stall, UserActivity.ActionType.PLAY_AUDIO, stallReq.getPlay(), now);
-                    unrollAction(activities, deviceId, stall, UserActivity.ActionType.SKIP_AUDIO, stallReq.getSkip(), now);
-                    unrollAction(activities, deviceId, stall, UserActivity.ActionType.FINISH_AUDIO, stallReq.getFinish(), now);
+                    unrollAction(activities, deviceId, sessionId, platform, stall, UserActivity.ActionType.PLAY_AUDIO_MANUAL, stallReq.getManualPlay(), now);
+                    unrollAction(activities, deviceId, sessionId, platform, stall, UserActivity.ActionType.PLAY_AUDIO_AUTO, stallReq.getAutoPlay(), now);
+                    unrollAction(activities, deviceId, sessionId, platform, stall, UserActivity.ActionType.SKIP_AUDIO, stallReq.getSkip(), now);
+                    unrollAction(activities, deviceId, sessionId, platform, stall, UserActivity.ActionType.FINISH_AUDIO, stallReq.getFinish(), now);
                 }
             }
 
@@ -205,11 +211,13 @@ public class AnalyticsService {
         }
     }
 
-    private void unrollAction(java.util.List<UserActivity> list, String deviceId, FoodStall stall,
+    private void unrollAction(java.util.List<UserActivity> list, String deviceId, String sessionId, String platform, FoodStall stall,
                              UserActivity.ActionType type, int count, LocalDateTime time) {
         for (int i = 0; i < count; i++) {
             list.add(UserActivity.builder()
                     .deviceId(deviceId)
+                    .sessionId(sessionId)
+                    .platform(platform)
                     .foodStall(stall)
                     .actionType(type)
                     .eventTime(time)

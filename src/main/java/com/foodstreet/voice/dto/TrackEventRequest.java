@@ -14,6 +14,12 @@ public class TrackEventRequest {
     @Schema(description = "Unique device identifier for anonymous tracking", example = "fcm_token_123")
     private String deviceId;
 
+    @Schema(description = "Session identifier", example = "session_abc123")
+    private String sessionId;
+
+    @Schema(description = "Device platform (android, ios, etc.)", example = "android")
+    private String platform;
+
     @NotNull(message = "Food Stall ID is required")
     @Schema(description = "ID of the stall the user is interacting with", example = "1")
     private Long stallId;
