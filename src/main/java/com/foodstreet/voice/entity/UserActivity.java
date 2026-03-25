@@ -32,19 +32,16 @@ public class UserActivity {
     @Column(nullable = false)
     private ActionType actionType;
 
-    @Column(name = "duration_seconds")
-    private Integer durationSeconds;
+    private LocalDateTime eventTime;
 
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     public enum ActionType {
-        VIEW_DETAILS,
         PLAY_AUDIO,
-        STOP_AUDIO,
+        SKIP_AUDIO,
         FINISH_AUDIO,
-        ENTER_REGION,
-        AUTO_PLAY
+        ENTER_REGION
     }
 }

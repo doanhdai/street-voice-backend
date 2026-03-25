@@ -22,6 +22,5 @@ public class TrackEventRequest {
     @Schema(description = "User interaction type", example = "PLAY")
     private UserActivity.ActionType action;
 
-    @Schema(description = "Duration of play event in seconds", example = "15")
-    private Integer duration; // Optional, in seconds
+
 }

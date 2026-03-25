@@ -1,5 +1,6 @@
 package com.foodstreet.voice.controller;
 
+import com.foodstreet.voice.dto.DeviceActivityBatchRequest;
 import com.foodstreet.voice.dto.TrackEventRequest;
 import com.foodstreet.voice.service.AnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -129,7 +130,7 @@ public class AnalyticsController {
     }
 
     @PostMapping("/track")
-    @Operation(summary = "Track a single user event", description = "Ghi nhận một sự kiện người dùng từ Mobile App. Các loại sự kiện hỗ trợ: `ENTER_REGION` (vào vùng quán), `PLAY_AUDIO` (bắt đầu nghe), `FINISH_AUDIO` (nghe xong), `SKIP_AUDIO` (bỏ qua). Body cần có `stallId`, `eventType`, `deviceId`.")
+    @Operation(summary = "Track a single user event", description = "Ghi nhận một sự kiện người dùng từ Mobile App. Các loại sự kiện hỗ trợ: `ENTER_REGION` (vào vùng quán), `PLAY_AUDIO` (bắt đầu nghe), `FINISH_AUDIO` (nghe xong), `SKIP_AUDIO` (bỏ qua). Body cần có `stallId`, `action` (loại sự kiện), `deviceId`.")
     public ResponseEntity<?> trackEvent(@Valid @RequestBody TrackEventRequest request) {
         analyticsService.trackEvent(request);
 
@@ -139,13 +140,14 @@ public class AnalyticsController {
     }
 
     @PostMapping("/track/batch")
-    @Operation(summary = "Batch sync events (offline mode)", description = "Đồng bộ hàng loạt sự kiện đã được lưu local khi thiết bị mất mạng. Gửi một mảng `TrackEventRequest[]` cùng lúc. Dùng khi Mobile App quay lại online.")
-    public ResponseEntity<?> trackEventsBatch(@Valid @RequestBody java.util.List<TrackEventRequest> requests) {
+    @Operation(summary = "Batch sync events (aggregated payload)", description = "Đồng bộ hàng loạt sự kiện gộp từ Frontend khi đóng app. " +
+            "Payload gồm danh sách `DeviceActivityBatchRequest`, mỗi request chứa `deviceId` và số lượng `play/skip/finish` theo từng `stallId`.")
+    public ResponseEntity<?> trackEventsBatch(@Valid @RequestBody java.util.List<DeviceActivityBatchRequest> requests) {
         analyticsService.trackEventsBatch(requests);
 
         return ResponseEntity.ok(Map.of(
                 "status", "success",
-                "message", "Batch events received",
-                "count", requests.size()));
+                "message", "Batch aggregated events received",
+                "devicesCount", requests.size()));
     }
 }
