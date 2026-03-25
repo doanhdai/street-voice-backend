@@ -17,6 +17,12 @@ public class DeviceActivityBatchRequest {
     @Schema(description = "Unique device identifier", example = "fcm_token_123")
     private String deviceId;
 
+    @Schema(description = "Session identifier", example = "session_abc123")
+    private String sessionId;
+
+    @Schema(description = "Device platform (android, ios, etc.)", example = "android")
+    private String platform;
+
     @Schema(description = "List of activity counts grouped by stall")
     private List<StallActivityCount> stalls;
 }

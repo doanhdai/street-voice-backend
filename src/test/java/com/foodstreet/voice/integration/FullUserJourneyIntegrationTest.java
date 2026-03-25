@@ -160,7 +160,8 @@ public class FullUserJourneyIntegrationTest {
                         .stalls(List.of(
                                 StallActivityCount.builder()
                                         .stallId(stallId)
-                                        .play(1)
+                                        .manualPlay(1)
+                                        .autoPlay(0)
                                         .finish(1)
                                         .build()
                         ))

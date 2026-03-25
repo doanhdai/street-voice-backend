@@ -33,7 +33,7 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
         SELECT ua.food_stall_id AS stallId,
             fs.name AS stallName,
             COUNT(*) FILTER (WHERE ua.action_type = 'ENTER_REGION') AS visits,
-            COUNT(*) FILTER (WHERE ua.action_type = 'PLAY_AUDIO') AS plays
+            COUNT(*) FILTER (WHERE ua.action_type IN ('PLAY_AUDIO', 'PLAY_AUDIO_MANUAL', 'PLAY_AUDIO_AUTO')) AS plays
         FROM user_activities ua
         JOIN food_stalls fs ON fs.id = ua.food_stall_id
         WHERE ua.created_at >= :fromTime
@@ -68,11 +68,11 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
         SELECT fs.id AS stallId,
                fs.name AS stallName,
                COUNT(*) FILTER (WHERE ua.action_type = 'ENTER_REGION') AS enters,
-               COUNT(*) FILTER (WHERE ua.action_type = 'PLAY_AUDIO') AS plays,
+               COUNT(*) FILTER (WHERE ua.action_type IN ('PLAY_AUDIO', 'PLAY_AUDIO_MANUAL', 'PLAY_AUDIO_AUTO')) AS plays,
                CASE
                    WHEN COUNT(*) FILTER (WHERE ua.action_type = 'ENTER_REGION') = 0 THEN 0
                    ELSE ROUND(
-                       CAST((COUNT(*) FILTER (WHERE ua.action_type = 'PLAY_AUDIO')) AS numeric)
+                       CAST((COUNT(*) FILTER (WHERE ua.action_type IN ('PLAY_AUDIO', 'PLAY_AUDIO_MANUAL', 'PLAY_AUDIO_AUTO'))) AS numeric)
                        / (COUNT(*) FILTER (WHERE ua.action_type = 'ENTER_REGION')), 4)
                END AS engagementRate
         FROM food_stalls fs
@@ -128,7 +128,7 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
         SELECT DATE(ua.created_at) AS day,
                COUNT(DISTINCT ua.device_id) AS users,
                COUNT(*) FILTER (WHERE ua.action_type = 'ENTER_REGION') AS visits,
-               COUNT(*) FILTER (WHERE ua.action_type = 'PLAY_AUDIO') AS plays
+               COUNT(*) FILTER (WHERE ua.action_type IN ('PLAY_AUDIO', 'PLAY_AUDIO_MANUAL', 'PLAY_AUDIO_AUTO')) AS plays
         FROM user_activities ua
         WHERE ua.created_at >= :fromTime
           AND ua.created_at < :toTime
