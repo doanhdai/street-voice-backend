@@ -94,6 +94,7 @@ public class FoodStallService {
         log.debug("Lay danh sach tat ca quan an, lang={}", lang);
         List<FoodStall> stalls = foodStallRepository.findAll().stream()
             .filter(stall -> stall.getStatus() == null || stall.getStatus() == StallStatus.ACTIVE)
+            .sorted(java.util.Comparator.comparing(FoodStall::getId))
             .toList();
         List<Long> stallIds = stalls.stream().map(FoodStall::getId).toList();
 

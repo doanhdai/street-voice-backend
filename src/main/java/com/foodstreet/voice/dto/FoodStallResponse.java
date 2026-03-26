@@ -35,4 +35,6 @@ public class FoodStallResponse {
     private String localizationStatus;
     private Integer priority;
     private String status;
+    @Schema(description = "Khoảng cách thực tế (mét) tính từ tọa độ truyền lên", example = "25.0")
+    private Double distance;
 }

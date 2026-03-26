@@ -19,7 +19,8 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
         // => rat tot khi dữ liệu lớn
         @Query(value = "SELECT * FROM food_stalls f " +
                         "WHERE (f.status IS NULL OR f.status = 'ACTIVE') " +
-                        "AND ST_DWithin(CAST(f.location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radiusInMeters)", nativeQuery = true)
+                        "AND ST_DWithin(CAST(f.location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radiusInMeters) " +
+                        "ORDER BY f.id ASC", nativeQuery = true)
         List<FoodStall> findStallsWithinRadius(@Param("latitude") double latitude,
                         @Param("longitude") double longitude,
                         @Param("radiusInMeters") double radiusInMeters);
@@ -63,7 +64,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
             FROM food_stalls
             WHERE ST_DWithin(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography), :radius)
                             AND (status IS NULL OR status = 'ACTIVE')
-            ORDER BY priority ASC, distance ASC
+            ORDER BY distance ASC, priority ASC
             LIMIT 5
             """, nativeQuery = true)
         List<GeofenceMatchProjection> findGeofenceMatches(
