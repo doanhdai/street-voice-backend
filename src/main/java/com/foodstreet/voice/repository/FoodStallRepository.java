@@ -56,6 +56,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 CAST(id AS varchar) || '_vi.mp3' as "audioUrl", 
                 trigger_radius as "triggerRadius", 
                 priority,
+                localization_status as "localizationStatus",
                 ST_Y(CAST(location AS geometry)) as "latitude", 
                 ST_X(CAST(location AS geometry)) as "longitude",
                 ST_Distance(CAST(location AS geography), CAST(ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326) AS geography)) AS "distance"
