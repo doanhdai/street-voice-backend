@@ -205,8 +205,9 @@ public class FoodStallService {
             String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode() : DEFAULT_LANG;
             String audioUrl = "/audio/" + p.getId() + "_" + actualLang + ".mp3";
             
-            String localizationStatus = (lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
-                                        ? "FALLBACK_TO_VI" : null;
+            String localizationStatus = (p.getLocalizationStatus() != null) ? p.getLocalizationStatus() :
+                                        ((lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
+                                        ? "FALLBACK_TO_VI" : null);
 
             return GeofenceStallResponse.builder()
                 .id(p.getId())
@@ -499,9 +500,13 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
+                .priority(stall.getPriority())
                 .usedLanguage(actualLang)
-                .localizationStatus(localizationStatus)
+                .localizationStatus(stall.getLocalizationStatus() != null ? stall.getLocalizationStatus() : localizationStatus)
                 .status(stall.getStatus() == null ? null : stall.getStatus().name())
+                .localizations(localizationRepository.findAllByFoodStallId(stall.getId()).stream()
+                    .map(l -> new LocalizationResponse(l.getLanguageCode(), l.getName(), l.getDescription(), l.getAddress()))
+                    .collect(Collectors.toList()))
                 .build();
     }
 }

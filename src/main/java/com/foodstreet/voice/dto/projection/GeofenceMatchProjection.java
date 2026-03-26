@@ -11,4 +11,5 @@ public interface GeofenceMatchProjection {
     Double getLatitude();
     Double getLongitude();
     Double getDistance();
+    String getLocalizationStatus();
 }

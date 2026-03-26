@@ -74,6 +74,9 @@ public class FoodStall {
     @Builder.Default
     private StallStatus status = StallStatus.ACTIVE;
 
+    @Column(name = "localization_status", length = 50)
+    private String localizationStatus;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
