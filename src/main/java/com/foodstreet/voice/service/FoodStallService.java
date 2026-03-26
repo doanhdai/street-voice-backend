@@ -158,17 +158,6 @@ public class FoodStallService {
 
         FoodStallResponse response = mapToResponseWithLang(stall, localization, effectiveLang);
 
-        // Fetch all localizations to show in Admin UI
-        List<FoodStallLocalization> allLocs = localizationRepository.findAllByFoodStallId(id);
-        List<LocalizationResponse> locResponses = allLocs.stream()
-                .map(l -> LocalizationResponse.builder()
-                        .languageCode(l.getLanguageCode())
-                        .name(l.getName())
-                        .description(l.getDescription())
-                        .audioUrl(l.getAudioUrl())
-                        .build())
-                .collect(Collectors.toList());
-        response.setLocalizations(locResponses);
 
         return response;
     }
@@ -504,9 +493,6 @@ public class FoodStallService {
                 .usedLanguage(actualLang)
                 .localizationStatus(stall.getLocalizationStatus() != null ? stall.getLocalizationStatus() : localizationStatus)
                 .status(stall.getStatus() == null ? null : stall.getStatus().name())
-                .localizations(localizationRepository.findAllByFoodStallId(stall.getId()).stream()
-                    .map(l -> new LocalizationResponse(l.getLanguageCode(), l.getName(), l.getDescription(), l.getAddress()))
-                    .collect(Collectors.toList()))
                 .build();
     }
 }

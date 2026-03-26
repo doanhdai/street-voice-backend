@@ -35,5 +35,4 @@ public class FoodStallResponse {
     private String localizationStatus;
     private Integer priority;
     private String status;
-    private List<LocalizationResponse> localizations;
 }
