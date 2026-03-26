@@ -48,23 +48,34 @@ public class StallOwnerService {
     public FoodStall submitStallUpdate(String username, StallOwnerUpsertRequest request) {
         User owner = findOwner(username);
         FoodStall stall;
+        FoodStallUpdateStatus pendingStatus;
 
         if (owner.getRestaurantId() == null) {
             stall = createPendingStall(owner, request);
             owner.setRestaurantId(stall.getId());
             userRepository.save(owner);
+            pendingStatus = FoodStallUpdateStatus.CREATE_PENDING;
         } else {
             stall = foodStallRepository.findByIdAndOwnerId(owner.getRestaurantId(), owner.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Stall does not exist for this owner"));
+
+            if (stall.getStatus() == StallStatus.PENDING) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Your stall update is pending approval. You cannot edit until admin reviews it.");
+            }
+
             stall.setStatus(StallStatus.PENDING);
             foodStallRepository.save(stall);
+            pendingStatus = hasApprovedUpdate(stall.getId())
+                    ? FoodStallUpdateStatus.UPDATE_PENDING
+                    : FoodStallUpdateStatus.CREATE_PENDING;
         }
 
         Map<String, Object> changes = toChanges(request);
         FoodStallUpdate update = FoodStallUpdate.builder()
                 .foodStall(stall)
                 .owner(owner)
-                .status(FoodStallUpdateStatus.PENDING)
+                .status(pendingStatus)
                 .changes(changes)
                 .build();
         foodStallUpdateRepository.save(update);
@@ -88,6 +99,13 @@ public class StallOwnerService {
                 .build();
 
         return foodStallRepository.save(stall);
+    }
+
+    private boolean hasApprovedUpdate(Long stallId) {
+        return foodStallUpdateRepository.existsByFoodStall_IdAndStatus(
+                stallId,
+                FoodStallUpdateStatus.APPROVED
+        );
     }
 
     private Map<String, Object> toChanges(StallOwnerUpsertRequest request) {

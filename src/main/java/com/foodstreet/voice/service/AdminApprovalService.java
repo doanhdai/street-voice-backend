@@ -34,7 +34,11 @@ public class AdminApprovalService {
 
     @Transactional(readOnly = true)
     public List<FoodStallUpdateResponse> getPendingApprovals() {
-        return foodStallUpdateRepository.findByStatusOrderByCreatedAtDesc(FoodStallUpdateStatus.PENDING)
+        return foodStallUpdateRepository.findByStatusInOrderByCreatedAtDesc(List.of(
+                FoodStallUpdateStatus.CREATE_PENDING,
+                FoodStallUpdateStatus.UPDATE_PENDING,
+                FoodStallUpdateStatus.PENDING
+            ))
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -53,7 +57,7 @@ public class AdminApprovalService {
         FoodStallUpdate update = foodStallUpdateRepository.findById(updateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Update request not found"));
 
-        if (update.getStatus() != FoodStallUpdateStatus.PENDING) {
+        if (!isPendingStatus(update.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending update can be approved");
         }
 
@@ -78,7 +82,7 @@ public class AdminApprovalService {
         FoodStallUpdate update = foodStallUpdateRepository.findById(updateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Update request not found"));
 
-        if (update.getStatus() != FoodStallUpdateStatus.PENDING) {
+        if (!isPendingStatus(update.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending update can be rejected");
         }
 
@@ -138,9 +142,23 @@ public class AdminApprovalService {
     }
 
     private FoodStallUpdateResponse toResponse(FoodStallUpdate update) {
+        boolean isCreatePending = update.getStatus() == FoodStallUpdateStatus.CREATE_PENDING;
+        boolean isUpdatePending = update.getStatus() == FoodStallUpdateStatus.UPDATE_PENDING;
+
+        Long stallId = update.getFoodStall() == null ? null : update.getFoodStall().getId();
+        boolean hadApprovedBefore = stallId != null && update.getCreatedAt() != null
+                && foodStallUpdateRepository.existsByFoodStall_IdAndStatusAndCreatedAtBefore(
+                        stallId,
+                        FoodStallUpdateStatus.APPROVED,
+                        update.getCreatedAt()
+                );
+
+        boolean isNewStallRequest = isCreatePending || (!isUpdatePending && !hadApprovedBefore);
+
         return FoodStallUpdateResponse.builder()
                 .id(update.getId())
                 .status(update.getStatus())
+                .newStallRequest(isNewStallRequest)
                 .createdAt(update.getCreatedAt())
                 .reviewedAt(update.getReviewedAt())
                 .reason(update.getReason())
@@ -148,6 +166,12 @@ public class AdminApprovalService {
                 .ownerUsername(update.getOwner() == null ? null : update.getOwner().getUsername())
                 .changes(update.getChanges())
                 .build();
+    }
+
+    private boolean isPendingStatus(FoodStallUpdateStatus status) {
+        return status == FoodStallUpdateStatus.PENDING
+                || status == FoodStallUpdateStatus.CREATE_PENDING
+                || status == FoodStallUpdateStatus.UPDATE_PENDING;
     }
 
     private Integer toIntegerValue(Object value) {
