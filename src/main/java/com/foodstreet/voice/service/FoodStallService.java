@@ -8,6 +8,7 @@ import com.foodstreet.voice.dto.projection.GeofenceMatchProjection;
 import com.foodstreet.voice.dto.UpdateFoodStallRequest;
 import com.foodstreet.voice.entity.FoodStall;
 import com.foodstreet.voice.entity.FoodStallLocalization;
+import com.foodstreet.voice.entity.StallStatus;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallLocalizationRepository;
 import com.foodstreet.voice.repository.FoodStallRepository;
@@ -51,6 +52,11 @@ public class FoodStallService {
         Specification<FoodStall> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            predicates.add(cb.or(
+                    cb.equal(root.get("status"), StallStatus.ACTIVE),
+                    cb.isNull(root.get("status"))
+            ));
+
             if (keyword != null && !keyword.isEmpty()) {
                 String likeKeyword = "%" + keyword.toLowerCase() + "%";
                 predicates.add(cb.or(
@@ -86,7 +92,10 @@ public class FoodStallService {
     @Transactional(readOnly = true)
     public List<FoodStallResponse> getAllStalls(String lang) {
         log.debug("Lay danh sach tat ca quan an, lang={}", lang);
-        List<FoodStall> stalls = foodStallRepository.findAll();
+        List<FoodStall> stalls = foodStallRepository.findAll().stream()
+            .filter(stall -> stall.getStatus() == null || stall.getStatus() == StallStatus.ACTIVE)
+            .sorted(java.util.Comparator.comparing(FoodStall::getId))
+            .toList();
         List<Long> stallIds = stalls.stream().map(FoodStall::getId).toList();
 
         // Fetch localizations in bulk
@@ -150,17 +159,6 @@ public class FoodStallService {
 
         FoodStallResponse response = mapToResponseWithLang(stall, localization, effectiveLang);
 
-        // Fetch all localizations to show in Admin UI
-        List<FoodStallLocalization> allLocs = localizationRepository.findAllByFoodStallId(id);
-        List<LocalizationResponse> locResponses = allLocs.stream()
-                .map(l -> LocalizationResponse.builder()
-                        .languageCode(l.getLanguageCode())
-                        .name(l.getName())
-                        .description(l.getDescription())
-                        .audioUrl(l.getAudioUrl())
-                        .build())
-                .collect(Collectors.toList());
-        response.setLocalizations(locResponses);
 
         return response;
     }
@@ -192,17 +190,20 @@ public class FoodStallService {
             
             String name = (loc != null && loc.getName() != null) ? loc.getName() : p.getName();
             String description = (loc != null && loc.getDescription() != null) ? loc.getDescription() : p.getDescription();
+            String address = (loc != null && loc.getAddress() != null) ? loc.getAddress() : p.getAddress();
             
             String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode() : DEFAULT_LANG;
             String audioUrl = "/audio/" + p.getId() + "_" + actualLang + ".mp3";
             
-            String localizationStatus = (lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
-                                        ? "FALLBACK_TO_VI" : null;
+            String localizationStatus = (p.getLocalizationStatus() != null) ? p.getLocalizationStatus() :
+                                        ((lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
+                                        ? "FALLBACK_TO_VI" : null);
 
             return GeofenceStallResponse.builder()
                 .id(p.getId())
                 .name(name)
                 .description(description)
+                .address(address)
                 .audioUrl(audioUrl)
                 .triggerRadius(p.getTriggerRadius())
                 .priority(p.getPriority())
@@ -460,6 +461,7 @@ public class FoodStallService {
         String name = (loc != null && loc.getName() != null) ? loc.getName() : stall.getName();
         String description = (loc != null && loc.getDescription() != null) ? loc.getDescription()
                 : stall.getDescription();
+        String address = (loc != null && loc.getAddress() != null) ? loc.getAddress() : stall.getAddress();
 
         // Tinh toan ngon ngu thuc te duoc su dung
         String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode()
@@ -476,7 +478,7 @@ public class FoodStallService {
         return FoodStallResponse.builder()
                 .id(stall.getId())
                 .name(name)
-                .address(stall.getAddress())
+                .address(address)
                 .description(description)
                 .audioUrl(audioUrl)
                 .imageUrl(stall.getImageUrl())
@@ -488,8 +490,10 @@ public class FoodStallService {
                 .audioDuration(stall.getAudioDuration())
                 .featuredReviews(stall.getFeaturedReviews())
                 .rating(stall.getRating())
+                .priority(stall.getPriority())
                 .usedLanguage(actualLang)
-                .localizationStatus(localizationStatus)
+                .localizationStatus(stall.getLocalizationStatus() != null ? stall.getLocalizationStatus() : localizationStatus)
+                .status(stall.getStatus() == null ? null : stall.getStatus().name())
                 .build();
     }
 }

@@ -34,5 +34,7 @@ public class FoodStallResponse {
     @Schema(description = "null if translation is available, 'FALLBACK_TO_VI' if the requested language had no localization", example = "FALLBACK_TO_VI")
     private String localizationStatus;
     private Integer priority;
-    private List<LocalizationResponse> localizations;
+    private String status;
+    @Schema(description = "Khoảng cách thực tế (mét) tính từ tọa độ truyền lên", example = "25.0")
+    private Double distance;
 }

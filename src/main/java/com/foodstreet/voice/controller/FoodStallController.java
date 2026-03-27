@@ -62,7 +62,7 @@ public class FoodStallController {
     @Operation(
         summary = "Get food stalls within geofence radius",
         description = "API dành cho Mobile App (Flutter) để quét các quán ăn gần vị trí hiện tại. " +
-            "Trả về tối đa **5 quán**, ưu tiên quán có `priority` cao trước, sau đó mới xờ khoảng cách. Dùng để kích hoạt thông báo âm thanh khi người dùng tiếp cận quán."
+            "Trả về tối đa **5 quán**, ưu tiên quán gần nhất trước, nếu khoảng cách bằng nhau thì mới xét đến `priority`. Dùng để kích hoạt thông báo âm thanh khi người dùng tiếp cận quán."
     )
     public ResponseEntity<List<GeofenceStallResponse>> getGeofenceMatches(
             @io.swagger.v3.oas.annotations.Parameter(description = "Vĩ độ (Latitude) hiện tại của người dùng", example = "10.762622") @RequestParam double lat,
@@ -251,6 +251,12 @@ public class FoodStallController {
         List<FoodStallResponse> response = stalls.stream().map(stall -> {
             FoodStallResponse res = convertToResponse(stall);
 
+            // Calculate and set distance for offline use
+            if (stall.getLocation() != null) {
+                double d = calculateDistance(lat, lng, stall.getLocation().getY(), stall.getLocation().getX());
+                res.setDistance(d);
+            }
+
             // Lazy generation check
             if (res.getAudioUrl() == null || res.getAudioUrl().isEmpty() || res.getAudioUrl().equals("null")) {
                 String audioText = "Xin chào, đây là " + stall.getName() + ". " + stall.getDescription();
@@ -347,6 +353,8 @@ public class FoodStallController {
         response.setMaxPrice(stall.getMaxPrice());
         response.setAudioDuration(stall.getAudioDuration());
         response.setFeaturedReviews(stall.getFeaturedReviews());
+        response.setPriority(stall.getPriority());
+        response.setStatus(stall.getStatus() == null ? null : stall.getStatus().name());
 
         // QUAN TRỌNG: Chuyển đổi tọa độ từ PostGIS (Point) sang Lat/Lng
         // Vì Mobile App (Flutter/React Native) chỉ hiểu Lat/Lng, không hiểu Geometry
@@ -356,6 +364,17 @@ public class FoodStallController {
             response.setLongitude(stall.getLocation().getX()); // X là Kinh độ (Lng)
         }
         return response;
+    }
+
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371000; // Radius of the earth in meters
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c * 100.0) / 100.0; // Round to 2 decimal places
     }
 
 }
