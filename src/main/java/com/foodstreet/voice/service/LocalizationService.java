@@ -189,17 +189,27 @@ public class LocalizationService {
     public String generateLocalization(Long stallId, String targetLang, boolean forceRegenerate) {
         log.info("[Localization] Bat dau tao localization stallId={}, lang={}, force={}", stallId, targetLang, forceRegenerate);
 
-        // 1. Lay thong tin goc tieng Viet
+        // 1. Lay thong tin nguon tieng Viet
+        // Khi forceRegenerate=true: dung food_stalls lam nguon chinh xac (tranh doc du lieu cu tu food_stall_localizations)
+        // Khi forceRegenerate=false: dung food_stall_localizations neu co (cho truong hop sync binh thuong)
         if (stallId == null) throw new IllegalArgumentException("stallId must not be null");
         FoodStall stall = foodStallRepository.findById(stallId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quan an khong ton tai: " + stallId));
 
-        FoodStallLocalization viLoc = localizationRepository
-                .findByFoodStallIdAndLanguageCode(stallId, "vi")
-                .orElse(null);
-
-        String sourceName = (viLoc != null && viLoc.getName() != null) ? viLoc.getName() : stall.getName();
-        String sourceDesc = (viLoc != null && viLoc.getDescription() != null) ? viLoc.getDescription() : stall.getDescription();
+        String sourceName;
+        String sourceDesc;
+        if (forceRegenerate) {
+            // Nguon chinh xac: food_stalls (da duoc update boi AdminApprovalService.applyChanges)
+            sourceName = stall.getName();
+            sourceDesc = stall.getDescription();
+            log.info("[Localization] [force=true] Doc text tu food_stalls: name='{}', stallId={}", sourceName, stallId);
+        } else {
+            FoodStallLocalization viLoc = localizationRepository
+                    .findByFoodStallIdAndLanguageCode(stallId, "vi")
+                    .orElse(null);
+            sourceName = (viLoc != null && viLoc.getName() != null) ? viLoc.getName() : stall.getName();
+            sourceDesc = (viLoc != null && viLoc.getDescription() != null) ? viLoc.getDescription() : stall.getDescription();
+        }
 
         // 2. Dich sang ngon ngu dich
         String translatedName;

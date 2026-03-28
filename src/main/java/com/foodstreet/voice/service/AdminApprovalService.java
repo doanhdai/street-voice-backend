@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -25,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminApprovalService {
 
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
@@ -67,6 +69,12 @@ public class AdminApprovalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reviewer user not found"));
 
         FoodStall stall = update.getFoodStall();
+
+        // Snapshot truoc khi ap dung thay doi de so sanh
+        String oldName = stall.getName();
+        String oldDesc = stall.getDescription();
+        String oldAddress = stall.getAddress();
+
         applyChanges(stall, update.getChanges());
         stall.setStatus(StallStatus.ACTIVE);
         foodStallRepository.save(stall);
@@ -76,8 +84,18 @@ public class AdminApprovalService {
         update.setReviewedBy(reviewer);
         update.setReason(null);
 
-        // Kich hoat tao lai audio sau khi da apply thay doi
-        localizationService.generateAllLanguagesForStall(stall.getId(), true);
+        // Chi tao lai audio neu co thay doi ve text (ten, mo ta, dia chi)
+        boolean textChanged =
+                !java.util.Objects.equals(oldName, stall.getName()) ||
+                !java.util.Objects.equals(oldDesc, stall.getDescription()) ||
+                !java.util.Objects.equals(oldAddress, stall.getAddress());
+
+        if (textChanged) {
+            log.info("[Approval] Text thay doi cho stallId={}, kich hoat tao lai audio (force=true)", stall.getId());
+            localizationService.generateAllLanguagesForStall(stall.getId(), true);
+        } else {
+            log.info("[Approval] Text khong thay doi cho stallId={}, bo qua tao lai audio", stall.getId());
+        }
 
         return toResponse(foodStallUpdateRepository.save(update));
     }
