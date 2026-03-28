@@ -49,21 +49,30 @@ public class AudioService {
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
         String hash = DigestUtils.md5DigestAsHex(text.getBytes());
         String fileName = hash + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode);
+        return getOrCreateAudioInternal(fileName, text, languageCode, false);
     }
 
     public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
-        String fileName = stallId + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode);
+        return getOrCreateAudioForStall(stallId, text, languageCode, false);
     }
 
-    private String getOrCreateAudioInternal(String fileName, String text, String languageCode) {
+    public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode, boolean forceRegenerate) {
+        String fileName = stallId + "_" + languageCode + ".mp3";
+        return getOrCreateAudioInternal(fileName, text, languageCode, forceRegenerate);
+    }
+
+    private String getOrCreateAudioInternal(String fileName, String text, String languageCode, boolean forceRegenerate) {
         try {
             Files.createDirectories(Paths.get(getUploadDir()));
             Path filePath = Paths.get(getUploadDir() + fileName);
 
-            if (Files.exists(filePath)) {
+            if (!forceRegenerate && Files.exists(filePath)) {
                 return "/audio/" + fileName;
+            }
+
+            // Neu bat buoc tao lai, xoa file cu neu ton tai de chac chan du lieu moi
+            if (forceRegenerate) {
+                Files.deleteIfExists(filePath);
             }
 
             return inProgressTasks.computeIfAbsent(fileName, key -> generateAudioAsync(fileName, text, languageCode, filePath)).join();

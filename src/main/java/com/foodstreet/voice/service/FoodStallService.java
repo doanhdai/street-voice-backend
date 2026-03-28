@@ -288,7 +288,7 @@ public class FoodStallService {
         log.debug("Updated food stall: {}", updatedStall.getName());
 
         // Neu ten hoac mo ta thay doi (hoac gia su la vay), cap nhat lai audio da ngon ngu
-        localizationService.generateAllLanguagesForStall(updatedStall.getId());
+        localizationService.generateAllLanguagesForStall(updatedStall.getId(), true);
 
         return mapToResponse(updatedStall);
     }

@@ -162,12 +162,17 @@ public class LocalizationService {
      */
     @Async
     public void generateAllLanguagesForStall(Long stallId) {
+        generateAllLanguagesForStall(stallId, false);
+    }
+
+    @Async
+    public void generateAllLanguagesForStall(Long stallId, boolean forceRegenerate) {
         String[] languages = {"vi", "en", "ja", "ko", "zh"};
-        log.info("[Localization] Bat dau tu dong tao audio cho {} ngon ngu, stallId={}", languages.length, stallId);
+        log.info("[Localization] Bat dau tu dong tao audio cho {} ngon ngu, stallId={}, force={}", languages.length, stallId, forceRegenerate);
         
         for (String lang : languages) {
             try {
-                this.generateLocalization(stallId, lang);
+                this.generateLocalization(stallId, lang, forceRegenerate);
             } catch (Exception e) {
                 log.error("[Localization] Loi khi tu dong tao lang={} cho stallId={}: {}", lang, stallId, e.getMessage());
             }
@@ -175,21 +180,14 @@ public class LocalizationService {
         log.info("[Localization] Hoan thanh tu dong tao audio cho stallId={}", stallId);
     }
 
-    /**
-     * Tao hoac cap nhat localization cho mot quan an.
-     * Buoc:
-     * 1. Lay thong tin tieng Viet (goc)
-     * 2. Dich name + description sang targetLang
-     * 3. Tao audio MP3 cho ban dich
-     * 4. Luu vao bang food_stall_localizations
-     *
-     * @param stallId    ID cua quan an
-     * @param targetLang Ma ngon ngu dich (en, ja, ko, zh)
-     * @return AudioUrl cua file MP3 tieng nuoc ngoai
-     */
     @Transactional
     public String generateLocalization(Long stallId, String targetLang) {
-        log.info("[Localization] Bat dau tao localization stallId={}, lang={}", stallId, targetLang);
+        return generateLocalization(stallId, targetLang, false);
+    }
+
+    @Transactional
+    public String generateLocalization(Long stallId, String targetLang, boolean forceRegenerate) {
+        log.info("[Localization] Bat dau tao localization stallId={}, lang={}, force={}", stallId, targetLang, forceRegenerate);
 
         // 1. Lay thong tin goc tieng Viet
         if (stallId == null) throw new IllegalArgumentException("stallId must not be null");
@@ -221,9 +219,9 @@ public class LocalizationService {
 
         // 3. Tao audio MP3
         String audioText = translatedName + ". " + translatedDesc;
-        log.info("[Localization] Tao audio lang={}, do dai text={} chars", targetLang, audioText.length());
+        log.info("[Localization] Tao audio lang={}, do dai text={} chars, force={}", targetLang, audioText.length(), forceRegenerate);
         @SuppressWarnings("null")
-        String audioUrl = audioService.getOrCreateAudioForStall(stallId, audioText, targetLang);
+        String audioUrl = audioService.getOrCreateAudioForStall(stallId, audioText, targetLang, forceRegenerate);
 
         // 4. Luu hoac cap nhat localization
         FoodStallLocalization localization = localizationRepository

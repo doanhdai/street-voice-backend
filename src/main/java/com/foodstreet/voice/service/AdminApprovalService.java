@@ -10,6 +10,7 @@ import com.foodstreet.voice.entity.StallStatus;
 import com.foodstreet.voice.exception.ResourceNotFoundException;
 import com.foodstreet.voice.repository.FoodStallRepository;
 import com.foodstreet.voice.repository.FoodStallUpdateRepository;
+import com.foodstreet.voice.service.LocalizationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class AdminApprovalService {
     private final FoodStallUpdateRepository foodStallUpdateRepository;
     private final FoodStallRepository foodStallRepository;
     private final UserRepository userRepository;
+    private final LocalizationService localizationService;
 
     @Transactional(readOnly = true)
     public List<FoodStallUpdateResponse> getPendingApprovals() {
@@ -73,6 +75,9 @@ public class AdminApprovalService {
         update.setReviewedAt(LocalDateTime.now());
         update.setReviewedBy(reviewer);
         update.setReason(null);
+
+        // Kich hoat tao lai audio sau khi da apply thay doi
+        localizationService.generateAllLanguagesForStall(stall.getId(), true);
 
         return toResponse(foodStallUpdateRepository.save(update));
     }
