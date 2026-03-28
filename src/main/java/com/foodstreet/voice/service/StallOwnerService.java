@@ -14,10 +14,6 @@ import com.foodstreet.voice.repository.FoodStallUpdateRepository;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +22,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class StallOwnerService {
-
-    private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
     private final UserRepository userRepository;
     private final FoodStallRepository foodStallRepository;
@@ -51,9 +45,9 @@ public class StallOwnerService {
         FoodStallUpdateStatus pendingStatus;
 
         if (owner.getRestaurantId() == null) {
-            stall = createPendingStall(owner, request);
-            owner.setRestaurantId(stall.getId());
-            userRepository.save(owner);
+            // New stall registration request:
+            // Do NOT create a FoodStall record yet. Only store the request in food_stall_updates.
+            stall = null;
             pendingStatus = FoodStallUpdateStatus.CREATE_PENDING;
         } else {
             stall = foodStallRepository.findByIdAndOwnerId(owner.getRestaurantId(), owner.getId())
@@ -81,24 +75,6 @@ public class StallOwnerService {
         foodStallUpdateRepository.save(update);
 
         return stall;
-    }
-
-    private FoodStall createPendingStall(User owner, StallOwnerUpsertRequest request) {
-        Point location = GEOMETRY_FACTORY.createPoint(new Coordinate(request.getLongitude(), request.getLatitude()));
-
-        FoodStall stall = FoodStall.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .address(request.getAddress())
-                .location(location)
-                .minPrice(request.getMinPrice())
-                .maxPrice(request.getMaxPrice())
-                .triggerRadius(request.getTriggerRadius() == null ? 15 : request.getTriggerRadius())
-                .ownerId(owner.getId())
-                .status(StallStatus.PENDING)
-                .build();
-
-        return foodStallRepository.save(stall);
     }
 
     private boolean hasApprovedUpdate(Long stallId) {
