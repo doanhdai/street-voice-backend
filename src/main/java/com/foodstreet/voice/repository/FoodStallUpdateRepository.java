@@ -5,6 +5,7 @@ import com.foodstreet.voice.entity.FoodStallUpdateStatus;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FoodStallUpdateRepository extends JpaRepository<FoodStallUpdate, Long> {
@@ -19,4 +20,15 @@ public interface FoodStallUpdateRepository extends JpaRepository<FoodStallUpdate
             FoodStallUpdateStatus status,
             LocalDateTime createdAt
     );
+
+        Optional<FoodStallUpdate> findTopByOwner_IdAndFoodStall_IdAndStatusInOrderByCreatedAtDesc(
+            Long ownerId,
+            Long foodStallId,
+            Collection<FoodStallUpdateStatus> statuses
+        );
+
+        List<FoodStallUpdate> findByOwner_IdAndFoodStallIsNullAndStatusInOrderByCreatedAtDesc(
+            Long ownerId,
+            Collection<FoodStallUpdateStatus> statuses
+        );
 }

@@ -74,12 +74,6 @@ public class AdminApprovalService {
             stall = createStallFromChanges(update);
             foodStallRepository.save(stall);
 
-            User owner = update.getOwner();
-            if (owner != null && (owner.getRestaurantId() == null || !owner.getRestaurantId().equals(stall.getId()))) {
-                owner.setRestaurantId(stall.getId());
-                userRepository.save(owner);
-            }
-
             update.setFoodStall(stall);
         } else {
             applyChanges(stall, update.getChanges());
@@ -149,12 +143,7 @@ public class AdminApprovalService {
         if (!hasApproved) {
             // New stall registration request rejected:
             // There should be no FoodStall row (new flow). If an older pending row exists, delete it.
-            User owner = savedUpdate.getOwner();
             if (stall != null) {
-                if (owner != null && owner.getRestaurantId() != null && owner.getRestaurantId().equals(stall.getId())) {
-                    owner.setRestaurantId(null);
-                    userRepository.save(owner);
-                }
                 foodStallRepository.delete(stall);
             }
             return response;

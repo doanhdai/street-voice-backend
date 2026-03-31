@@ -77,5 +77,7 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
 
         Optional<FoodStall> findByIdAndOwnerId(Long id, Long ownerId);
 
+        List<FoodStall> findAllByOwnerIdOrderByUpdatedAtDesc(Long ownerId);
+
         List<FoodStall> findByStatus(StallStatus status);
 }
