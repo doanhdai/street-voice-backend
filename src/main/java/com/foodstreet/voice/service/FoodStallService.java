@@ -226,6 +226,7 @@ public class FoodStallService {
 
         FoodStall stall = FoodStall.builder()
                 .name(request.getName())
+                .address(request.getAddress())
                 .description(request.getDescription())
                 .audioUrl(request.getAudioUrl())
                 .imageUrl(request.getImageUrl())
