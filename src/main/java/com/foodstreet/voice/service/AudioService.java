@@ -68,16 +68,11 @@ public class AudioService {
     }
 
     /**
-     * Generate a new versioned audio file for a stall and remove stale files of the same language.
-     * This avoids CDN/browser serving a cached file with the same URL after content updates.
+     * Backward-compatible alias for force-regeneration without timestamped filenames.
+     * Keeps a stable URL format: /audio/{stallId}_{lang}.mp3
      */
     public String generateVersionedAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
-        String fileName = stallId + "_" + languageCode + "_" + System.currentTimeMillis() + ".mp3";
-        String audioUrl = getOrCreateAudioInternal(fileName, text, languageCode, false);
-        if (audioUrl != null) {
-            cleanupOldStallAudioVersions(stallId, languageCode, fileName);
-        }
-        return audioUrl;
+        return generateAndOverwriteAudioForStall(stallId, text, languageCode);
     }
 
     private String getOrCreateAudioInternal(String fileName, String text, String languageCode, boolean overwrite) {

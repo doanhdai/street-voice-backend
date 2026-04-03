@@ -297,7 +297,7 @@ public class LocalizationService {
         log.info("[Localization] Tao audio lang={}, do dai text={} chars", targetLang, audioText.length());
         @SuppressWarnings("null")
         String audioUrl = forceAudio
-            ? audioService.generateVersionedAudioForStall(stallId, audioText, targetLang)
+            ? audioService.generateAndOverwriteAudioForStall(stallId, audioText, targetLang)
                 : audioService.getOrCreateAudioForStall(stallId, audioText, targetLang);
 
         // 4. Luu hoac cap nhat localization
