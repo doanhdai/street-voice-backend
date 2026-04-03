@@ -468,9 +468,11 @@ public class FoodStallService {
         // Tinh toan ngon ngu thuc te duoc su dung
         String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode()
                 : DEFAULT_LANG;
-        String audioUrl = (stall.getAudioUrl() != null && !stall.getAudioUrl().isBlank())
-            ? stall.getAudioUrl()
-            : "/audio/" + stall.getId() + "_" + DEFAULT_LANG + ".mp3";
+        String audioUrl = (loc != null && loc.getAudioUrl() != null && !loc.getAudioUrl().isBlank())
+            ? loc.getAudioUrl()
+            : ((stall.getAudioUrl() != null && !stall.getAudioUrl().isBlank())
+                ? stall.getAudioUrl()
+                : "/audio/" + stall.getId() + "_" + DEFAULT_LANG + ".mp3");
 
         // Neu ngon ngu thuc te khac ngon ngu yeu cau => da fallback ve tieng Viet
         String localizationStatus = null;
