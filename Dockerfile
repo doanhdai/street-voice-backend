@@ -1,9 +1,26 @@
+<<<<<<< HEAD
 # Run Stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 # Su dung file jar da build local tai target/
 COPY target/*.jar app.jar
 COPY .env .env
+=======
+# Build Stage
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -Dmaven.test.skip=true
+
+# Run Stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+## NOTE:
+## Do not COPY `.env` into the image because `.env` is typically not committed (secrets)
+## and fresh clones would fail to build. Use docker-compose `environment`/`env_file` instead.
+>>>>>>> 812848c8544f0f9ed1d9960c4e63f7642a8209fc
 
 # Cai Python3 + edge-tts de tao audio thật
 RUN apk add --no-cache python3 py3-pip \
