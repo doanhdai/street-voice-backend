@@ -47,22 +47,30 @@ public class AudioService {
     }
 
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
+        return getOrCreateAudio(text, languageCode, false);
+    }
+
+    public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode, boolean force) {
         String hash = DigestUtils.md5DigestAsHex(text.getBytes());
         String fileName = hash + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode);
+        return getOrCreateAudioInternal(fileName, text, languageCode, force);
     }
 
     public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
-        String fileName = stallId + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode);
+        return getOrCreateAudioForStall(stallId, text, languageCode, false);
     }
 
-    private String getOrCreateAudioInternal(String fileName, String text, String languageCode) {
+    public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode, boolean force) {
+        String fileName = stallId + "_" + languageCode + ".mp3";
+        return getOrCreateAudioInternal(fileName, text, languageCode, force);
+    }
+
+    private String getOrCreateAudioInternal(String fileName, String text, String languageCode, boolean force) {
         try {
             Files.createDirectories(Paths.get(getUploadDir()));
             Path filePath = Paths.get(getUploadDir() + fileName);
 
-            if (Files.exists(filePath)) {
+            if (!force && Files.exists(filePath)) {
                 return "/audio/" + fileName;
             }
 
@@ -120,7 +128,7 @@ public class AudioService {
 
         // Tao audio moi tu description dung format stallId_lang.mp3
         String text = stall.getName() + ". " + stall.getDescription();
-        String newAudioUrl = getOrCreateAudioForStall(stallId, text, "vi");
+        String newAudioUrl = getOrCreateAudioForStall(stallId, text, "vi", true);
 
         stall.setAudioUrl(newAudioUrl);
         foodStallRepository.save(stall);
