@@ -48,43 +48,34 @@ public class AudioService {
     }
 
     public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode) {
+        return getOrCreateAudio(text, languageCode, false);
+    }
+
+    public String getOrCreateAudio(@NonNull String text, @NonNull String languageCode, boolean force) {
         String hash = DigestUtils.md5DigestAsHex(text.getBytes());
         String fileName = hash + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode, false);
+        return getOrCreateAudioInternal(fileName, text, languageCode, force);
     }
 
     public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
+        return getOrCreateAudioForStall(stallId, text, languageCode, false);
+    }
+
+    public String getOrCreateAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode, boolean force) {
         String fileName = stallId + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode, false);
+        return getOrCreateAudioInternal(fileName, text, languageCode, force);
     }
 
-    /**
-     * Generate audio and overwrite the existing file (if any).
-     * Used after admin approval to ensure the mp3 matches the latest approved content.
-     */
-    public String generateAndOverwriteAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
-        String fileName = stallId + "_" + languageCode + ".mp3";
-        return getOrCreateAudioInternal(fileName, text, languageCode, true);
-    }
-
-    /**
-     * Backward-compatible alias for force-regeneration without timestamped filenames.
-     * Keeps a stable URL format: /audio/{stallId}_{lang}.mp3
-     */
-    public String generateVersionedAudioForStall(@NonNull Long stallId, @NonNull String text, @NonNull String languageCode) {
-        return generateAndOverwriteAudioForStall(stallId, text, languageCode);
-    }
-
-    private String getOrCreateAudioInternal(String fileName, String text, String languageCode, boolean overwrite) {
+    private String getOrCreateAudioInternal(String fileName, String text, String languageCode, boolean force) {
         try {
             Files.createDirectories(Paths.get(getUploadDir()));
             Path filePath = Paths.get(getUploadDir() + fileName);
 
-            if (!overwrite && Files.exists(filePath)) {
+            if (!force && Files.exists(filePath)) {
                 return "/audio/" + fileName;
             }
 
-             if (overwrite) {
+             if (force) {
                 Files.deleteIfExists(filePath);
             }
 
@@ -172,7 +163,7 @@ public class AudioService {
 
         // Tao audio moi tu description dung format stallId_lang.mp3
         String text = stall.getName() + ". " + stall.getDescription();
-        String newAudioUrl = generateAndOverwriteAudioForStall(stallId, text, "vi");
+        String newAudioUrl = getOrCreateAudioForStall(stallId, text, "vi", true);
 
         stall.setAudioUrl(newAudioUrl);
         foodStallRepository.save(stall);

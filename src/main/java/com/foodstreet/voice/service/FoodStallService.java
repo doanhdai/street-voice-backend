@@ -256,11 +256,14 @@ public class FoodStallService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Quan an khong ton tai: " + id));
 
-        if (request.getName() != null) {
+        boolean contentChanged = false;
+        if (request.getName() != null && !request.getName().equals(stall.getName())) {
             stall.setName(request.getName());
+            contentChanged = true;
         }
-        if (request.getDescription() != null) {
+        if (request.getDescription() != null && !request.getDescription().equals(stall.getDescription())) {
             stall.setDescription(request.getDescription());
+            contentChanged = true;
         }
         if (request.getAudioUrl() != null) {
             stall.setAudioUrl(request.getAudioUrl());
@@ -289,8 +292,11 @@ public class FoodStallService {
         FoodStall updatedStall = foodStallRepository.save(stall);
         log.debug("Updated food stall: {}", updatedStall.getName());
 
-        // Neu ten hoac mo ta thay doi (hoac gia su la vay), cap nhat lai audio da ngon ngu
-        localizationService.generateAllLanguagesForStall(updatedStall.getId());
+        // Neu ten hoac mo ta thay doi, cap nhat lai audio da ngon ngu
+        if (contentChanged) {
+            log.info("Content (name/description) changed for stall {}, triggering audio regeneration", id);
+            localizationService.generateAllLanguagesForStall(updatedStall.getId());
+        }
 
         return mapToResponse(updatedStall);
     }
@@ -472,7 +478,7 @@ public class FoodStallService {
             ? loc.getAudioUrl()
             : ((stall.getAudioUrl() != null && !stall.getAudioUrl().isBlank())
                 ? stall.getAudioUrl()
-                : "/audio/" + stall.getId() + "_" + DEFAULT_LANG + ".mp3");
+                : null); // Không tự tạo URL giả — trả null nếu chưa có audio thực sự
 
         // Neu ngon ngu thuc te khac ngon ngu yeu cau => da fallback ve tieng Viet
         String localizationStatus = null;
