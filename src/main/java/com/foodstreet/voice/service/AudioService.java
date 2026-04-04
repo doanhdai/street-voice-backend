@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,6 +75,11 @@ public class AudioService {
                 return "/audio/" + fileName;
             }
 
+             if (force) {
+                Files.deleteIfExists(filePath);
+            }
+
+            // Same file name is used as the task key to avoid concurrent regenerations.
             return inProgressTasks.computeIfAbsent(fileName, key -> generateAudioAsync(fileName, text, languageCode, filePath)).join();
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,6 +99,35 @@ public class AudioService {
         }).whenComplete((result, ex) -> {
             inProgressTasks.remove(fileName);
         });
+    }
+
+    private void cleanupOldStallAudioVersions(Long stallId, String languageCode, String keepFileName) {
+        String versionPrefix = stallId + "_" + languageCode + "_";
+        String legacyFileName = stallId + "_" + languageCode + ".mp3";
+
+        try (Stream<Path> stream = Files.list(Paths.get(getUploadDir()))) {
+            List<Path> oldFiles = stream
+                    .filter(path -> !Files.isDirectory(path))
+                    .filter(path -> {
+                        String name = path.getFileName().toString();
+                        return (name.startsWith(versionPrefix) || name.equals(legacyFileName))
+                                && !name.equals(keepFileName);
+                    })
+                    .sorted(Comparator.comparingLong(path -> {
+                        try {
+                            return Files.getLastModifiedTime(path).toMillis();
+                        } catch (IOException e) {
+                            return Long.MIN_VALUE;
+                        }
+                    }))
+                    .collect(Collectors.toList());
+
+            for (Path oldFile : oldFiles) {
+                Files.deleteIfExists(oldFile);
+            }
+        } catch (IOException ignored) {
+            // Best effort cleanup only. Audio generation should not fail because cleanup failed.
+        }
     }
 
     public List<String> listAllAudioFiles() {

@@ -1,10 +1,10 @@
--- V7__Seed_Initial_Data.sql
+-- V8__Seed_Initial_Data.sql
 
 -- 1. Insert Admin User (Password: admin123)
 -- Use BCrypt hash for 'admin123': $2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2
 INSERT INTO users (username, email, password_hash, role, enabled)
-VALUES ('admin', 'admin@foodstreet.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'ADMIN', true)
-ON CONFLICT (username) DO NOTHING;
+VALUES ('admin', 'admin@foodstreet.com', '$2a$10$vI84W0qv.DqW49EDZ8V1uuz.3GfOuzk27je0hW8K/u6H9K2uL3hKm', 'ADMIN', true)
+ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 -- 2. Insert Sample Food Stalls (if not exists by name)
 -- First, add a temporary unique constraint to help with ON CONFLICT if desired, 

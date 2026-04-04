@@ -5,5 +5,6 @@ public enum FoodStallUpdateStatus {
     UPDATE_PENDING,
     PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
+    CANCELLED
 }

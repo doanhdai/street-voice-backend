@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +24,37 @@ public class LocalizationService {
     private final FoodStallLocalizationRepository localizationRepository;
     private final TranslationService translationService;
     private final AudioService audioService;
+
+    /**
+     * Upsert nhanh ban tieng Viet (vi) tu food_stalls vao food_stall_localizations.
+     * Dung de UI nhan du lieu moi ngay sau khi admin approve, truoc khi background translate/audio hoan tat.
+     */
+    @Transactional
+    public void upsertVietnameseFromStall(Long stallId) {
+        if (stallId == null) return;
+
+        FoodStall stall = foodStallRepository.findById(stallId)
+                .orElseThrow(() -> new ResourceNotFoundException("Quan an khong ton tai: " + stallId));
+
+        FoodStallLocalization loc = localizationRepository
+                .findByFoodStall_IdAndLanguageCode(stallId, "vi")
+                .orElse(FoodStallLocalization.builder()
+                        .foodStall(stall)
+                        .languageCode("vi")
+                        .build());
+
+        loc.setName(stall.getName());
+        loc.setDescription(stall.getDescription());
+        loc.setAddress(stall.getAddress());
+
+        // Keep VI localization audio in sync with the canonical audio_url stored on food_stalls.
+        String stallAudioUrl = (stall.getAudioUrl() != null && !stall.getAudioUrl().isBlank())
+            ? stall.getAudioUrl()
+            : "/audio/" + stallId + "_vi.mp3";
+        loc.setAudioUrl(stallAudioUrl);
+
+        localizationRepository.save(loc);
+    }
 
     /**
      * Translate-on-Create: Tao localization + audio cho tat ca ngon ngu ngay khi FoodStall duoc tao.
@@ -81,9 +111,14 @@ public class LocalizationService {
                 }
                 final String finalAudioUrl = audioUrl;
 
+                if ("vi".equalsIgnoreCase(lang) && finalAudioUrl != null && !finalAudioUrl.isBlank()) {
+                    savedStall.setAudioUrl(finalAudioUrl);
+                    foodStallRepository.save(savedStall);
+                }
+
                 // Database Save Phase (upsert)
                 FoodStallLocalization stallRef = localizationRepository
-                        .findByFoodStallIdAndLanguageCode(stallId, lang)
+                        .findByFoodStall_IdAndLanguageCode(stallId, lang)
                         .map(existing -> {
                             existing.setName(finalName);
                             existing.setDescription(finalDesc);
@@ -181,6 +216,25 @@ public class LocalizationService {
     }
 
     /**
+     * Force-regenerate audio files for all languages (overwrite mp3) and upsert localizations.
+     * Used after admin approves an update to ensure audio matches the latest content.
+     */
+    @Async
+    public void regenerateAllLanguagesForStall(Long stallId) {
+        String[] languages = {"vi", "en", "ja", "ko", "zh"};
+        log.info("[Localization] Force regenerate audio cho {} ngon ngu, stallId={}", languages.length, stallId);
+
+        for (String lang : languages) {
+            try {
+                this.generateLocalizationForceAudio(stallId, lang);
+            } catch (Exception e) {
+                log.error("[Localization] Force regenerate loi lang={} stallId={}: {}", lang, stallId, e.getMessage());
+            }
+        }
+        log.info("[Localization] Hoan thanh force regenerate audio cho stallId={}", stallId);
+    }
+
+    /**
      * Tao hoac cap nhat localization cho mot quan an.
      * Buoc:
      * 1. Lay thong tin tieng Viet (goc)
@@ -192,6 +246,11 @@ public class LocalizationService {
      * @param targetLang Ma ngon ngu dich (en, ja, ko, zh)
      * @return AudioUrl cua file MP3 tieng nuoc ngoai
      */
+    @Transactional
+    public String generateLocalizationForceAudio(Long stallId, String lang) {
+        return generateLocalization(stallId, lang, true);
+    }
+
     @Transactional
     public String generateLocalization(Long stallId, String targetLang) {
         return generateLocalization(stallId, targetLang, false);
@@ -207,11 +266,20 @@ public class LocalizationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Quan an khong ton tai: " + stallId));
 
         FoodStallLocalization viLoc = localizationRepository
-                .findByFoodStallIdAndLanguageCode(stallId, "vi")
+                .findByFoodStall_IdAndLanguageCode(stallId, "vi")
                 .orElse(null);
 
-        String sourceName = (viLoc != null && viLoc.getName() != null) ? viLoc.getName() : stall.getName();
-        String sourceDesc = (viLoc != null && viLoc.getDescription() != null) ? viLoc.getDescription() : stall.getDescription();
+        // Prefer the latest approved FoodStall fields as the Vietnamese source-of-truth.
+        // Only fallback to stored "vi" localization if stall fields are missing.
+        String sourceName = stall.getName();
+        if (sourceName == null || sourceName.isBlank()) {
+            sourceName = (viLoc != null) ? viLoc.getName() : null;
+        }
+
+        String sourceDesc = stall.getDescription();
+        if (sourceDesc == null || sourceDesc.isBlank()) {
+            sourceDesc = (viLoc != null) ? viLoc.getDescription() : null;
+        }
 
         // 2. Dich sang ngon ngu dich
         String translatedName;
@@ -237,7 +305,7 @@ public class LocalizationService {
 
         // 4. Luu hoac cap nhat localization
         FoodStallLocalization localization = localizationRepository
-                .findByFoodStallIdAndLanguageCode(stallId, targetLang)
+                .findByFoodStall_IdAndLanguageCode(stallId, targetLang)
                 .orElse(FoodStallLocalization.builder()
                         .foodStall(stall)
                         .languageCode(targetLang)
@@ -249,6 +317,12 @@ public class LocalizationService {
         localization.setAudioUrl(audioUrl);
 
         localizationRepository.save(localization);
+
+        // Canonical audio URL for client retrieval is stored on food_stalls (VI/default audio).
+        if ("vi".equalsIgnoreCase(targetLang) && audioUrl != null && !audioUrl.isBlank()) {
+            stall.setAudioUrl(audioUrl);
+            foodStallRepository.save(stall);
+        }
 
         log.info("[Localization] Hoan thanh stallId={}, lang={}, audioUrl={}", stallId, targetLang, audioUrl);
         return audioUrl;
