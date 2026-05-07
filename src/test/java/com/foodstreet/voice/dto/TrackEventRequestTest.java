@@ -27,13 +27,26 @@ class TrackEventRequestTest {
     }
 
     @Test
-    void shouldRequireStallIdForNonIdleAction() {
+    void shouldParseAppHeartbeatActionCaseInsensitively() throws Exception {
+        TrackEventRequest request = objectMapper.readValue("""
+                {
+                  "deviceId": "device-1",
+                  "action": "App_HeartBeat"
+                }
+                """, TrackEventRequest.class);
+
+        assertThat(request.getAction()).isEqualTo(UserActivity.ActionType.APP_HEARTBEAT);
+        assertThat(validator.validate(request)).isEmpty();
+    }
+
+    @Test
+    void shouldRequireStallIdForActionsOtherThanIdleAndHeartbeat() {
         TrackEventRequest request = TrackEventRequest.builder()
                 .deviceId("device-1")
                 .action(UserActivity.ActionType.PLAY_AUDIO)
                 .build();
 
         assertThat(validator.validate(request))
-                .anyMatch(violation -> violation.getMessage().equals("Food Stall ID is required unless action is IDLE"));
+                .anyMatch(violation -> violation.getMessage().equals("Food Stall ID is required unless action is IDLE or APP_HEARTBEAT"));
     }
 }

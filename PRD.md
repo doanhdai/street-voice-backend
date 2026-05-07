@@ -152,7 +152,7 @@
 
 **Acceptance Criteria:**
 
-- **AC-03.1:** Endpoint chấp nhận payload JSON gồm: `deviceId` (not blank), `stallId` (not null), `action` (một trong `VIEW_DETAILS`, `PLAY_AUDIO`, `STOP_AUDIO`, `FINISH_AUDIO`, `ENTER_REGION`, `AUTO_PLAY`), và `duration` (optional, đơn vị giây).
+- **AC-03.1:** Endpoint chấp nhận payload JSON gồm: `deviceId` (not blank), `stallId` (not null với các action gắn quán), `action` (một trong `IDLE`, `APP_HEARTBEAT`, `PLAY_AUDIO`, `PLAY_AUDIO_MANUAL`, `PLAY_AUDIO_AUTO`, `SKIP_AUDIO`, `FINISH_AUDIO`, `ENTER_REGION`), và `duration` (optional, đơn vị giây).
 - **AC-03.2:** `AnalyticsService.trackEvent()` phải thực thi **bất đồng bộ** (`@Async`) để không block API response trả về client.
 - **AC-03.3:** Hệ thống luôn trả về HTTP 200 `{"status": "success"}` ngay lập tức, ngay cả khi quá trình lưu analytics bị lỗi nội bộ (lỗi chỉ được ghi vào log, không ném ra client).
 - **AC-03.4:** Nếu `stallId` không tồn tại trong database, lỗi `ResourceNotFoundException` phải được bắt nội bộ và ghi log, không trả về HTTP 4xx cho client.
@@ -228,7 +228,8 @@ flowchart TD
     O --> P[Người dùng nhấn nút Play]
     P --> Q[App stream audio từ audioUrl\ncó trong FoodStallResponse]
     Q --> R[Gửi Analytics Event:\naction=PLAY_AUDIO]
-    R --> S{Người dùng\nkết thúc audio?}
+    R --> R1[Gửi Analytics Event:\naction=APP_HEARTBEAT\n(ping giữ phiên)]
+    R1 --> S{Người dùng\nkết thúc audio?}
     S -- Dừng giữa chừng --> T[Gửi Event: STOP_AUDIO\nvới duration_seconds]
     S -- Nghe hết --> U[Gửi Event: FINISH_AUDIO]
     T --> V([Kết thúc phiên])
@@ -338,7 +339,7 @@ sequenceDiagram
 
 | ID | Mô tả yêu cầu |
 |---|---|
-| FR-04.1 | Hệ thống phải ghi nhận các sự kiện hành vi người dùng: `VIEW_DETAILS`, `PLAY_AUDIO`, `STOP_AUDIO`, `FINISH_AUDIO`, `ENTER_REGION`, `AUTO_PLAY`. |
+| FR-04.1 | Hệ thống phải ghi nhận các sự kiện hành vi người dùng: `IDLE`, `APP_HEARTBEAT`, `VIEW_DETAILS`, `PLAY_AUDIO`, `PLAY_AUDIO_MANUAL`, `PLAY_AUDIO_AUTO`, `SKIP_AUDIO`, `FINISH_AUDIO`, `ENTER_REGION`, `AUTO_PLAY`. |
 | FR-04.2 | Mỗi sự kiện phải được gắn với `deviceId` (anonymous), `stallId`, và `timestamp`. |
 | FR-04.3 | Quá trình lưu analytics phải bất đồng bộ, không ảnh hưởng đến response time của các API chính. |
 

@@ -49,6 +49,7 @@ public class UserActivity {
 
     public enum ActionType {
         IDLE,
+        APP_HEARTBEAT,
         PLAY_AUDIO, // Keeping for backward compatibility
         PLAY_AUDIO_MANUAL,
         PLAY_AUDIO_AUTO,

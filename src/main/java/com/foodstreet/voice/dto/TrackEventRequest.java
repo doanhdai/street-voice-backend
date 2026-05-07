@@ -21,16 +21,19 @@ public class TrackEventRequest {
     @Schema(description = "Device platform (android, ios, etc.)", example = "android")
     private String platform;
 
-    @Schema(description = "ID of the stall the user is interacting with. Optional when action is IDLE.", example = "1")
+    @Schema(description = "ID of the stall the user is interacting with. Optional when action is IDLE or APP_HEARTBEAT.", example = "1")
     private Long stallId;
 
     @NotNull(message = "Action type is required")
-    @Schema(description = "User interaction type. Use IDLE to indicate the user is online in the app.", example = "IDLE")
+    @Schema(description = "User interaction type. Use IDLE or APP_HEARTBEAT to indicate the user is online in the app.", example = "IDLE")
     private UserActivity.ActionType action;
 
-    @AssertTrue(message = "Food Stall ID is required unless action is IDLE")
+    @AssertTrue(message = "Food Stall ID is required unless action is IDLE or APP_HEARTBEAT")
     @Schema(hidden = true)
     public boolean isStallIdValidForAction() {
-        return action == null || action == UserActivity.ActionType.IDLE || stallId != null;
+        return action == null
+                || action == UserActivity.ActionType.IDLE
+                || action == UserActivity.ActionType.APP_HEARTBEAT
+                || stallId != null;
     }
 }

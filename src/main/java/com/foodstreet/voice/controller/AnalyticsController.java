@@ -130,7 +130,7 @@ public class AnalyticsController {
         }
 
         @PostMapping("/track")
-        @Operation(summary = "Track a single user event", description = "Ghi nhận một sự kiện người dùng từ Mobile App. Các loại sự kiện hỗ trợ: `IDLE` (user đang online trong app), `ENTER_REGION` (vào vùng quán), `PLAY_AUDIO` (bắt đầu nghe), `FINISH_AUDIO` (nghe xong), `SKIP_AUDIO` (bỏ qua). Body cần có `action` (loại sự kiện), `deviceId`; `stallId` là bắt buộc trừ khi `action` là `IDLE`.")
+        @Operation(summary = "Track a single user event", description = "Ghi nhận một sự kiện người dùng từ Mobile App. Các loại sự kiện hỗ trợ: `IDLE` (user đang online trong app), `APP_HEARTBEAT` (ping giữ phiên/realtime), `ENTER_REGION` (vào vùng quán), `PLAY_AUDIO` (bắt đầu nghe), `FINISH_AUDIO` (nghe xong), `SKIP_AUDIO` (bỏ qua). Body cần có `action` (loại sự kiện), `deviceId`; `stallId` là bắt buộc trừ khi `action` là `IDLE` hoặc `APP_HEARTBEAT`.")
         public ResponseEntity<?> trackEvent(@Valid @RequestBody TrackEventRequest request) {
                 analyticsService.trackEvent(request);
 
