@@ -24,6 +24,15 @@ public class LocalizationService {
     private final FoodStallLocalizationRepository localizationRepository;
     private final TranslationService translationService;
     private final AudioService audioService;
+    
+    // Self-injection to handle @Async internal calls
+    private LocalizationService self;
+
+    @org.springframework.context.annotation.Lazy
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSelf(LocalizationService self) {
+        this.self = self;
+    }
 
     /**
      * Upsert nhanh ban tieng Viet (vi) tu food_stalls vao food_stall_localizations.
@@ -178,7 +187,7 @@ public class LocalizationService {
             if (existingLangCount < totalLangCount) {
                 log.info("[SyncAll] stallId={} (ten='{}') chi co {}/{} ngon ngu -> kich hoat dong bo",
                         stall.getId(), stall.getName(), existingLangCount, totalLangCount);
-                processLocalizationAndAudioInBackground(stall);
+                self.processLocalizationAndAudioInBackground(stall);
                 needsSync++;
             } else {
                 alreadyComplete++;

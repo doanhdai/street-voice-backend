@@ -54,7 +54,10 @@ public interface FoodStallRepository extends JpaRepository<FoodStall, Long>, Jpa
                 name, 
                 description, 
                 address,
-                COALESCE(audio_url, '/audio/' || CAST(id AS varchar) || '_vi.mp3') as "audioUrl", 
+                CASE 
+                    WHEN audio_url LIKE '/audio/%' THEN audio_url 
+                    ELSE '/audio/' || CAST(id AS varchar) || '_vi.mp3' 
+                END as "audioUrl", 
                 trigger_radius as "triggerRadius", 
                 priority,
                 localization_status as "localizationStatus",

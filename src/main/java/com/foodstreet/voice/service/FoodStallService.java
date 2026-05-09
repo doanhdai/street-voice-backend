@@ -193,9 +193,11 @@ public class FoodStallService {
             String address = (loc != null && loc.getAddress() != null) ? loc.getAddress() : p.getAddress();
             
             String actualLang = (loc != null && loc.getLanguageCode() != null) ? loc.getLanguageCode() : DEFAULT_LANG;
-            String audioUrl = (p.getAudioUrl() != null && !p.getAudioUrl().isBlank())
-                    ? p.getAudioUrl()
-                    : "/audio/" + p.getId() + "_" + DEFAULT_LANG + ".mp3";
+            String audioUrl = (loc != null && loc.getAudioUrl() != null && !loc.getAudioUrl().isBlank())
+                    ? loc.getAudioUrl()
+                    : ((p.getAudioUrl() != null && !p.getAudioUrl().isBlank())
+                        ? p.getAudioUrl()
+                        : "/audio/" + p.getId() + "_" + DEFAULT_LANG + ".mp3");
             
             String localizationStatus = (p.getLocalizationStatus() != null) ? p.getLocalizationStatus() :
                                         ((lang != null && !DEFAULT_LANG.equals(lang) && !lang.equals(actualLang)) 
