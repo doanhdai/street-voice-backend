@@ -20,7 +20,6 @@ public class EdgeTTSProvider implements AudioProviderStrategy {
             "ko", "ko-KR-SunHiNeural",
             "zh", "zh-CN-XiaoxiaoNeural"
     );
-
     @Override
     @NonNull
     @SuppressWarnings("null")
