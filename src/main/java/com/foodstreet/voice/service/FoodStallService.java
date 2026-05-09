@@ -159,6 +159,20 @@ public class FoodStallService {
 
         FoodStallResponse response = mapToResponseWithLang(stall, localization, effectiveLang);
 
+        // Inject TẤT CẢ localizations để frontend hiển thị audio theo từng ngôn ngữ
+        List<FoodStallLocalization> allLocs = localizationRepository.findAllByFoodStall_Id(id);
+        if (!allLocs.isEmpty()) {
+            List<FoodStallResponse.LocalizationInfo> locInfos = allLocs.stream()
+                    .map(l -> FoodStallResponse.LocalizationInfo.builder()
+                            .languageCode(l.getLanguageCode())
+                            .name(l.getName())
+                            .description(l.getDescription())
+                            .address(l.getAddress())
+                            .audioUrl(l.getAudioUrl())
+                            .build())
+                    .collect(Collectors.toList());
+            response.setLocalizations(locInfos);
+        }
 
         return response;
     }

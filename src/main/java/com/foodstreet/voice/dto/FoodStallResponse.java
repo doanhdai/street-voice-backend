@@ -37,4 +37,19 @@ public class FoodStallResponse {
     private String status;
     @Schema(description = "Khoảng cách thực tế (mét) tính từ tọa độ truyền lên", example = "25.0")
     private Double distance;
+
+    @Schema(description = "Danh sách localization theo từng ngôn ngữ (vi, en, ja, ko, zh)")
+    private List<LocalizationInfo> localizations;
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LocalizationInfo {
+        private String languageCode;
+        private String name;
+        private String description;
+        private String address;
+        private String audioUrl;
+    }
 }
